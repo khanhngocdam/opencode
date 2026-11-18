@@ -14,10 +14,10 @@ Experimental command: `codev2`; v1 remains installed independently.
 | Gateway/SSO | Pending | Configure, login, models and expired-key recovery on v2 |
 | SkillHub/Stack/Office/CodeGraph | Pending | Install/use/update against existing services |
 | Upload/statistics | Pending | v2 adapter, backend payload compatibility, opt-out and deduplication |
-| Sandbox and Code/Work | Pending | Guest v2 server, mounts, broker, lifecycle and permission checks |
+| Sandbox and Code/Work | Preview stub only | Guest v2 server, mounts, broker, lifecycle and permission checks. `@codev/sandbox` exports `sandboxPreviewAvailability()` (always unsupported; `codev_sandbox` flag reports "guest v2 server image pending"); no VM, IPC or desktop wiring yet |
 | Remaining v1 divergences | In progress | Every source inventory row classified with evidence |
 | Migration | Pending | Snapshot import, warnings and idempotence; source untouched |
-| VS Code and release artifacts | Pending | Isolated VSIX/CLI/desktop artifacts, no automatic publication |
+| VS Code and release artifacts | VS Code preview packaging script; release artifacts pending | Isolated VSIX/CLI/desktop artifacts, no automatic publication |
 
 ## Phase 1 coverage (brand + isolation)
 
@@ -43,3 +43,27 @@ These v1 inventory rows are classified as covered by the Codev2 identity work
 - Preserve v2 locales, typography, UI state machines and durable session semantics.
 - Final verification includes package tests, `bun run check`, live TUI and desktop,
   platform packaging, and an upstream-sync rehearsal.
+
+## VS Code
+
+The upstream extension in `sdks/vscode` (`sst-dev.opencode`, `opencode.*` commands) is not renamed.
+`sdks/vscode/script/pack-codev2.ts` stages an isolated preview in `sdks/vscode/dist-codev2/`:
+extension `codev.codev2`, display name `CoDev Code 2`, commands `codev2.*`, terminal and binary `codev2`.
+Nothing is published automatically.
+
+```sh
+cd sdks/vscode
+bun install
+bun script/pack-codev2.ts          # stage dist-codev2/ only (patched package.json and src/extension.ts)
+bun script/pack-codev2.ts --vsix   # also bundle with esbuild and package dist-codev2/*.vsix with vsce
+code --install-extension dist-codev2/codev2-*.vsix
+```
+
+The extension opens a terminal and runs `codev2`, so install the preview CLI first. Verify the VSIX
+installs next to Codev v1 and OpenCode without sharing commands or keybindings before marking this done.
+
+## Inventory classification
+
+`codev-v1-inventory.json` rows use `covered` (implemented in v2), `port` (needs v2 integration),
+`drop` (not applicable to the fork), or `review` (needs manual comparison against v2). No row is `pending`.
+`review` rows are not evidence of implementation.

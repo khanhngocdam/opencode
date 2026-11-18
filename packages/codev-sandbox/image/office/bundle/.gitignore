@@ -1,0 +1,5 @@
+# Staging dir: build-image.ts copies the office bundle's skill and node-module
+# zips here per run. They are build inputs, not sources.
+*
+!.gitignore
+!.keep

@@ -1,0 +1,67 @@
+#!/bin/bash
+# PID 1 of the vz sandbox guest (kernel cmdline: init=/sbin/codev-init).
+# Mounts the virtio-fs shares, bridges vsock to loopback TCP, and runs the
+# codev server per /codev-config/boot.json. The guest has no NIC: socat over
+# vsock (host CID 2) is the only way bytes leave this machine.
+set -u
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+mount -t proc proc /proc
+mount -t sysfs sys /sys
+mountpoint -q /dev || mount -t devtmpfs dev /dev
+mkdir -p /dev/pts /dev/shm
+mount -t devpts devpts /dev/pts 2>/dev/null || true
+mount -t tmpfs tmpfs /dev/shm 2>/dev/null || true
+mount -t tmpfs tmpfs /tmp
+mount -t virtiofs workspace /workspace
+mount -t virtiofs bundle /opt/codev
+mount -t virtiofs config /codev-config
+# Extra host folders arrive as additional virtiofs tags listed in mounts.json,
+# which the host rewrites on every start. Tags and guest paths are sanitized
+# host-side (no spaces or quotes); a failed mount is logged and skipped so one
+# bad share cannot brick the boot.
+if [ -f /codev-config/mounts.json ]; then
+  node -e '
+    for (const m of require("/codev-config/mounts.json").mounts ?? []) console.log(m.tag, m.path)
+  ' | while read -r tag path; do
+    mkdir -p "$path" && mount -t virtiofs "$tag" "$path" || echo "codev-init: mount $tag at $path failed" >&2
+  done
+fi
+ip link set lo up
+
+[ -f /etc/codev-guest.env ] && . /etc/codev-guest.env
+
+# Server path: host connects vsock:4096 -> guest loopback TCP. Broker path:
+# guest loopback TCP:8788 -> host vsock:8788 (the egress broker).
+socat VSOCK-LISTEN:4096,fork,reuseaddr TCP:127.0.0.1:4096 &
+socat TCP-LISTEN:8788,bind=127.0.0.1,fork,reuseaddr VSOCK-CONNECT:2:8788 &
+
+# boot.json carries the server env (credentials, hostname, port); the guest
+# launcher (baked at /opt/codev-guest) reads them and calls Server.listen.
+eval "$(node -e '
+const boot = require("/codev-config/boot.json")
+for (const [key, value] of Object.entries(boot.env)) console.log("export " + key + "=" + JSON.stringify(value))
+')"
+
+export HOME=/home/codev
+cp -Rn /etc/skel/. "$HOME"/ 2>/dev/null || true
+
+# The server runs as the image's unprivileged codev user; PID 1 and the vsock
+# bridges stay root. No uid remapping is needed: Virtualization.framework's
+# virtio-fs performs host operations as the process that owns the VM and
+# reports every shared file as root inside the guest, so guest ownership never
+# gates workspace access — verified on macOS 15 (append, mkdir, create all
+# succeed as uid 1000 and land on the host owned by the host user).
+chown -R codev:codev "$HOME" 2>/dev/null
+
+cd /workspace
+setpriv --reuid=codev --regid=codev --init-groups node /opt/codev-guest/server-launch.mjs &
+SERVER=$!
+
+# Stay PID 1: reap orphans, power off when the server dies so the helper's
+# guestDidStop fires and the provider sees a clean exit.
+while :; do
+  wait -n 2>/dev/null
+  kill -0 "$SERVER" 2>/dev/null || break
+done
+busybox poweroff -f 2>/dev/null || poweroff -f 2>/dev/null || echo o > /proc/sysrq-trigger

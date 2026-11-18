@@ -76,10 +76,15 @@ not apply. Do not truncate history or merge unrelated histories.
 | `packages/desktop/src/main/service/desktop-cli.ts` | Disable the upstream macOS CLI installer. | Prevent overwriting the installed opencode command from Codev2. | Keep preview installation unavailable until a fork installer is tested. |
 | `packages/desktop/src/main/service/background-service.ts` | Discover the local-channel service under Codev2 state. | Match CLI registration and SDK discovery. | Keep all discovery roots aligned. |
 | `packages/desktop/script/dev.ts` | Reject downloading an upstream development server. | Keep the desktop preview on this fork. | Preserve source/build modes and reject the upstream download path. |
+| `sdks/vscode/.gitignore` | Ignore the generated `dist-codev2/` preview staging directory. | Keep the Codev2 VSIX staging output out of Git without renaming the upstream extension. | Keep the extra `dist-codev2` line; take upstream's other entries. |
 
 ## Fork-only modules
 
 - `packages/codev-brand`: pure branding adapter and contract tests.
+- `packages/codev-sandbox`: v1 sandbox providers copied for later integration; only `src/preview.ts`
+  (`sandboxPreviewAvailability`, always unsupported in the preview, never boots a VM) is exported for v2 UI use.
+- `sdks/vscode/script/pack-codev2.ts`: stages an isolated `CoDev Code 2` extension (`codev.codev2`, `codev2.*`
+  commands, `codev2` binary) in `sdks/vscode/dist-codev2/`; leaves the upstream extension untouched.
 - `packages/cli/src/services/codev-updater.ts`: preview update policy; no upstream installers.
 - `packages/cli/test/codev-updater.test.ts`: preview update isolation contract.
 - `packages/cli/bin/codev2.cjs`: isolated command entry point.
@@ -87,7 +92,7 @@ not apply. Do not truncate history or merge unrelated histories.
 - `.github/workflows/check-codev.yml`: validates divergence coverage with full history.
 - `codev.upstream.json`: upstream and v1 source provenance.
 - `CODEV-MIGRATION.md`: implementation status and acceptance gates.
-- `codev-v1-inventory.json`: source divergence inventory; pending entries are not implemented.
+- `codev-v1-inventory.json`: source divergence inventory; `pending`, `port` and `review` entries are not implemented.
 
 ## Known gaps
 

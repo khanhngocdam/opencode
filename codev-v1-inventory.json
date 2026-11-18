@@ -81,7 +81,7 @@
     },
     {
       "id": "v1-014",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/ui/dialog-select.tsx` | Added a `persistent?` prop that hides the top-right `esc` hint | A non-dismissable select shouldn't advertise `esc` (the dialog store's persistent flag blocks the actual close). | Keep our prop + the `Show` wrapper around the esc label; take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
@@ -93,33 +93,33 @@
     },
     {
       "id": "v1-016",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/ui/dialog-prompt.tsx`, `packages/tui/src/config/keybind.ts`, `packages/tui/src/app.tsx` | Ctrl+V paste in dialog prompts. keybind.ts: added `\"dialog.prompt.paste\"` definition (`ctrl+v`, `preventDefault: false`, no CommandMap entry — dotted keys map to themselves). dialog-prompt.tsx: a `dialog.prompt.paste` command in the existing priority-1 binding layer reads `useClipboard().read?.()` and inserts `text/plain` content (newlines stripped, matching the single-line `InputRenderable` paste — dialog prompts are single-line fields and some upstream consumers store the value untrimmed); the command list is gathered alongside `dialog.prompt.submit`. app.tsx: `TuiInput.clipboard?: ClipboardService` passed to `<ClipboardProvider value=…>` so tests inject a deterministic clipboard. Covered by the ctrl+v test in the fork-only `packages/tui/test/custom-provider.view.test.tsx`. | Many Windows terminals deliver ctrl+v as a key event instead of a bracketed paste, and upstream's clipboard-reading `prompt.paste` command targets only the main session prompt — so dialog fields (API keys in /connect, the custom-provider flow) could not paste at all (upstream issue anomalyco/opencode#39837). Bracketed paste still goes through the textarea's built-in default handler; the binding layer's `!props.busy` guard disables paste while busy. | Keep the keybind definition, the paste command + gathered binding list, and the `clipboard` input plumbing; take upstream's surrounding changes. Sent upstream as anomalyco/opencode#39844 (identical code) — once it lands in a synced release this row collapses to nothing; if upstream ships a different dialog paste fix, prefer theirs and drop this row. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Clipboard behavior needs a check against v2 packages/tui/src/clipboard.ts"
     },
     {
       "id": "v1-017",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/clipboard.ts`, `packages/tui/src/component/prompt/index.tsx` | `read()`'s `win32`/WSL branch reads the text clipboard with `powershell.exe … [Console]::Out.Write([string](Get-Clipboard -Raw))` (UTF-8 `OutputEncoding`) right after the existing image probe, instead of falling through to `clipboardy`. | `clipboardy`'s Windows backend is the only one with no PATH-resolved fallback — it spawns `../fallbacks/windows/clipboard_x86_64.exe`, resolved from `import.meta.url`. Inside our compiled single-file binary that resolves under the bunfs root (`B:/~BUN/root/`) and the `.exe` is not embedded (verified: `codev-code-windows-x64@1.18.4-6` ships only `bin/codev.exe`), so every text read failed with ENOENT and was swallowed by the `.catch`. `clipboard.read()` returning `undefined` silently broke ctrl+v in the main prompt (`prompt.paste`), in dialog prompts (`dialog.prompt.paste`, see the row above), and in the empty-bracketed-paste fallback. Copy was unaffected (`copyCommand` already shells out to PowerShell), as was image paste. `Console.Out.Write` bypasses PowerShell's formatting pipeline so no trailing newline is appended. Paired with a `packages/tui/src/component/prompt/index.tsx` change: the `prompt.paste` command now toasts when the clipboard read yields nothing, instead of returning silently — that silence is why a completely dead paste path went unreported for so long. | Keep the PowerShell text read as long as we ship a compiled binary. If upstream drops `clipboardy` or vendors the Windows helper next to the executable, prefer theirs and drop this row. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Clipboard behavior needs a check against v2 packages/tui/src/clipboard.ts"
     },
     {
       "id": "v1-018",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/terminal-win32.ts`, `packages/opencode/src/cli/cmd/debug/index.ts` | terminal-win32.ts: added a `win32ConsoleMode()` export returning the console input mode read through the guard's own kernel32 handle (undefined under the same conditions that stop `win32InstallCtrlCGuard` installing). debug/index.ts: registered the fork-only `ConsoleCommand` (`codev debug console`, `packages/opencode/src/cli/cmd/debug/console.ts`). | Windows users whose console keeps ENABLE_PROCESSED_INPUT set get ctrl+c as a console break rather than a keypress, which strands the cmd.exe shims in a hub launch chain at \"Terminate batch job (Y/N)?\" and looks like a frozen terminal. `codev debug console` reads the mode, installs the real guard, re-reads to prove the bit actually clears, then unhooks and re-reads — so an affected machine reports itself instead of needing a maintainer to bisect it. `codevhub doctor` relays the JSON form as its `console-ctrl-c` check. | Keep the `win32ConsoleMode` export and the one-line command registration; take upstream's surrounding changes. Both collapse to nothing if upstream ever ships its own console diagnostic. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Windows terminal/console behavior needs a check against v2 packages/tui"
     },
     {
       "id": "v1-019",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/terminal-win32.ts`, `packages/tui/src/app.tsx` | terminal-win32.ts: added a `win32RasterFontConsole()` export (kernel32 `GetCurrentConsoleFontEx` via the existing dlopen table): true only when stdout is a win32 TTY, none of `WT_SESSION`/`TERM_PROGRAM`/`TERM` are set (conhost sets none of them; Windows Terminal, VS Code, mintty, ssh each set one), and the current console font lacks `TMPF_TRUETYPE`. app.tsx: an `onMount` next to the other startup toasts shows a one-shot warning toast when it returns true, telling the user to use Windows Terminal or a TrueType console font. | Legacy conhost with a raster font can only draw OEM-code-page characters: the display path best-fit converts everything else to \"?\" at draw time (chcp/SetConsoleOutputCP docs), so Vietnamese/CJK users see corrupted prompts and responses even though the buffer and the data are correct. The app cannot fix the rendering, so it warns instead of corrupting silently. | Keep the `win32RasterFontConsole` export and the warning-toast `onMount`; take upstream's surrounding changes. Drop both if upstream ships its own legacy-console/raster-font warning. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Windows terminal/console behavior needs a check against v2 packages/tui"
     },
     {
       "id": "v1-020",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/opencode/script/build.ts` | Platform packages' `package.json` name `codev-code-<platform>` (dist dir names unchanged — the bun compile target derives from them); compiled binary emitted as `bin/codev` (was `bin/opencode`; smoke-test path follows); win32 targets additionally stage ripgrep at `bin/rg.exe` (`RG_VERSION` — `\"latest\"` resolves the newest GitHub release per build via the releases API, an exact version pins its release tag; asset zip extracted in-memory with `@zip.js/zip.js` so no unzip/powershell host dependency, magic-byte-checked against proxy block pages; one release lookup, and x64/x64-baseline share one download per arch) | npm publishing under the fork's names; the binary inside platform packages carries the fork's name (postinstall.mjs copies it into the `codev` bin shim). The `Script.release` upload block stays upstream-shaped and unused — the fork's `.github/workflows/release.yml` packages and uploads GitHub-release artifacts itself. Bundling rg makes a bare `npm i -g codev-code` self-sufficient on Windows, where fff is disabled so file search depends entirely on rg and corporate networks block the runtime GitHub download (see the Windows file-search row for the resolution side). `RG_VERSION` defaults to `\"latest\"`: the build machine needs GitHub access anyway, and floating leaves no version to keep in sync — binary.ts's pinned `VERSION` governs only the runtime download fallback (the mirror hosts just that version) and is independent of the bundled copy. | Keep our `name:` line, `bin/codev` paths, and the ripgrep bundling block; take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "v1 build/release/packaging scripts; v2 uses codev2 packaging (see DIVERGENCES.md and CODEV-MIGRATION.md)"
     },
     {
       "id": "v1-021",
@@ -129,15 +129,15 @@
     },
     {
       "id": "v1-022",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/opencode/bin/opencode` | `base` prefix `opencode-` → `codev-code-` | Runtime platform-binary lookup must match the published names. | Keep our prefix. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "v1 build/release/packaging scripts; v2 uses codev2 packaging (see DIVERGENCES.md and CODEV-MIGRATION.md)"
     },
     {
       "id": "v1-023",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/opencode/script/postinstall.mjs` | `base` prefix `opencode-` → `codev-code-`; source/target binary names `opencode`/`opencode.exe` → `codev`/`codev.exe` (matches build.ts's `bin/codev` and publish.ts's `bin/codev.exe` stub); temp-dir prefix and failure message rebranded; best-effort `copyRipgrep` copies the Windows packages' bundled `bin/rg.exe` next to the codev binary, on both resolution paths (in the temp npm-install path before its `finally` cleanup deletes the package); `installPackage` spawns the fallback `npm install` through `cmd.exe /d /s /c npm …` on Windows (plain `npm` elsewhere) and takes a `failures` array; `verifyBinary` returns `null` or a one-line reason (spawn error, exit code/signal, first stderr line — stderr is piped, not ignored); `main` collects a per-package reason for every failed step (not installed → fallback fetch → `--version`) and appends a `What was tried:` list to the final error; `firstLine` helper | Install-time platform-binary fetch must match the published package and binary names. The rg copy is what puts the bundled binary where core's ripgrep resolution looks (`path.dirname(process.execPath)`); it must never fail the install — the agent still has PATH/cache/download resolution without it. | Keep our prefix, binary names, the `copyRipgrep` calls, the cmd.exe spawn, and the failure reporting; take upstream's surrounding changes. The cmd.exe spawn fixes an upstream bug (Node ≥ 18.20.2/20.12.2 refuses to spawn `npm.cmd` without a shell, so the fallback silently never ran on Windows) — drop it if upstream ships its own fix. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "v1 build/release/packaging scripts; v2 uses codev2 packaging (see DIVERGENCES.md and CODEV-MIGRATION.md)"
     },
     {
       "id": "v1-024",
@@ -159,15 +159,15 @@
     },
     {
       "id": "v1-027",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/ui/src/v2/components/wordmark-v2.tsx` (+ fork-only `wordmark-v2.css`) | `WordmarkV2` — the watermark behind the v2 new-session composer (`packages/app/src/components/session/session-new-design-view.tsx`) — draws the codev wordmark from the same 24x6 pixel grid as `Logo` instead of upstream's 720x129 \"opencode\", as two `<path>`s (`data-slot=\"wordmark-v2-co\"` / `…-dev`). Upstream's watermark treatment is kept verbatim: the `0.6` outer opacity and the alpha mask whose gradient fades the mark out over its bottom half (converted to the new viewBox: gradient `y1` 68/129 → 3.163/6). \"co\" keeps `fill=\"currentColor\"` so it still follows the caller's `text-*` class; \"dev\" takes brand red `#ee0033`. Per-half opacities live in the new `wordmark-v2.css`, following the one-CSS-file-per-v2-component convention: `co` is `0.112` (upstream's own `0.16 × 0.7` nesting, flattened), `dev` is boosted to `0.224` on light and `0.336` on dark via `--wordmark-v2-dev-opacity`, declared under `prefers-color-scheme` and both `[data-color-scheme]` values like components/logo.css. The boost is deliberate and measured: at upstream's weight a saturated red composites to within a few levels of the grey \"co\" half against the dark background and the two-tone disappears entirely, while the same value already reads pink against the light one. | The component is currently **not rendered** — the new-session view drops it (see the row below) — but it stays rebranded and exported so reinstating the watermark does not bring the upstream mark back with it. | Keep our version wholesale, including the per-theme `dev` opacity. If upstream retunes the watermark opacities, re-derive the `dev` boost from the new base rather than adopting a single flat value. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-028",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/ui/src/theme/themes/oc-2.json` | One character: the light variant's `\"icon-weak-base\": \"C7C7C7\"` → `\"#C7C7C7\"`. Not a brand change — an upstream typo, reported as [anomalyco/opencode#41503](https://github.com/anomalyco/opencode/issues/41503). Without the `#` it is still a valid *custom-property* declaration, so it parses cleanly and wins the cascade over the static `--icon-weak-base` in `packages/ui/src/styles/theme.css` (resolved tokens are injected into a `<style>` element by `theme/context.tsx`). It only fails at `var()` substitution, where an invalid computed value falls back to the inherited value for inherited properties and the initial value otherwise — so the failure looks different at every call site. Measured on the default light theme: `color:` consumers paint their parent's color instead of the weak grey, and `background:` / `fill:` consumers paint nothing. That blanks the `dialog-release-notes` carousel indicators and the neutral `diff-changes` blocks outright, and renders the `file-tree`, `settings-keybinds` and `settings-models` icons at full strength. `oc-2` is the only one of the 37 themes that declares this token literally and the only malformed one — the rest take the derived `neutral[6]` — and it is the default, so this is the default light-mode experience. Dark (`#343434`) was always correct. | Five consumers are visibly wrong on the default light theme and the fix is one character, so there is no reason to wait for upstream. | Drop this row and take upstream's line once the issue is fixed there. Until then keep ours, and take any upstream change to this value as long as it starts with `#`. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-029",
@@ -177,9 +177,9 @@
     },
     {
       "id": "v1-030",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/pages/home.tsx`, `packages/app/src/pages/error.tsx`, `packages/enterprise/src/routes/share/[shareID].tsx` | `Logo` width utilities retuned for the codev wordmark's 4:1 box (upstream's is 5.57:1): home `md:w-xl` → `md:w-104`, error `w-58.5` → `w-42`, share (both call sites) `w-58.5` → `w-42` | Each value is the width at which the new wordmark renders at exactly the height the upstream one did, so no surrounding layout shifts. | Keep our widths; take upstream's surrounding changes. Recompute rather than restore if upstream changes the size. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-031",
@@ -189,9 +189,9 @@
     },
     {
       "id": "v1-032",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/context/tabs.tsx` | `newDraft` inserts with `tabs.unshift(tab)` instead of `tabs.push(tab)`, so a draft opens at the head of the tab strip. Session tabs (`addSessionTab`) still append, and nothing else about draft handling changes. | A draft is where you start a session, so it belongs at the front of the strip rather than behind every session already open — with several tabs open the New session tab was scrolling off the right-hand end. | Keep the `unshift`. On conflict take upstream's `newDraft` and swap the insert back. Note the knock-on: `promoteDraft` replaces the draft **at its own index**, so a promoted session keeps the head position and sessions accumulate newest-first. That is intended — the tab you are working in should not jump across the strip the moment you send the first message — but if it is ever unwanted, move the tab in `promoteDraft` rather than reverting this, or the New session tab goes back to the end. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-033",
@@ -207,57 +207,57 @@
     },
     {
       "id": "v1-035",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/app.tsx` | `AppInterface`'s `ServerShell` no longer wraps its children in a second `<QueryProvider>`; it renders `<SharedProviders>` directly. `QueryProvider` itself is unchanged and still installed once, by `AppBaseProviders`. | `QueryProvider` builds a fresh `QueryClient` on every render, and it was mounted twice: once in `AppBaseProviders` and again inside `ServerShell`. `GlobalProvider` sits above `ServerShell`, so `ServerSync` — and the home session index cache it owns (`context/global-sync/home-session-index.ts`) — resolved the outer client, while everything under the router, including the sidebar and the home screen, resolved the inner one. The index that `session.created`/`session.updated` events write to therefore had no readers, and the list those events exist to keep fresh could only change when its own query refetched. In this fork that list is the persistent sidebar's Recents section, so a session stayed missing from Recents until something remounted the observer — switching Code/Work and back reassigns the observer's key, which is why that looked like the fix. Both `AppInterface` call sites (`packages/app/src/entry.tsx`, `packages/desktop/src/renderer/index.tsx`) already wrap it in `AppBaseProviders`, so the nested client was always redundant. | Keep the single provider. If upstream reworks the shell, the invariant to preserve is that `ServerSync` and the components reading its queries resolve the *same* `QueryClient` — verify by checking that `homeSessions.apply` and the sidebar's `sessionLoad` land in one cache, not that this exact JSX survives. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-036",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/context/settings.tsx`, `packages/app/src/components/settings-general.tsx`, `packages/app/src/components/settings-v2/general.tsx`, `packages/app/src/context/settings.test.ts`, `packages/app/src/pages/session/composer/session-revert-dock.stories.tsx`, deleted `packages/app/src/components/settings-v2/interface-transition.tsx` + `interface-transition.stories.tsx`, deleted `packages/app/e2e/regression/legacy-new-session.spec.ts`, `packages/app/e2e/regression/session-timeline-projection.spec.ts`, `packages/app/e2e/performance/timeline-stability/fixture.ts` | **The legacy layout is retired: the fork ships one layout and no way back.** Upstream runs a timed migration — `oldInterfaceSunset` (a hardcoded date), a per-profile `layoutTransitionEligible` flag, a `newLayoutDesigns` preference and a Settings → General **New layout** switch — so existing users can flip between layouts until the sunset passes. All of it goes. `newLayoutDesigns` becomes `createMemo(() => true)`: reading a constant rather than the persisted value is what makes a profile carrying `newLayoutDesigns: false` (older build, another device via sync, hand-edited store) still come up on the new layout, which suppressing the toggle alone would not. `setNewLayoutDesigns`, `layoutTransitionAvailable`, `newInterfaceNoticeVisible` and `dismissNewInterfaceNotice` are **removed from the context rather than stubbed** — a no-op setter would let a caller look like it was switching layouts, so re-introducing the toggle has to be a compile error. Both Settings screens (v1 `settings-general.tsx` and v2 `settings-v2/general.tsx`) lose their `InterfaceSection` + `InterfaceNoticeSection` and the `<Show>` blocks that mounted them; `interface-transition.tsx` and its story are deleted with their last caller. The sunset machinery in `settings.tsx` goes with it — `oldInterfaceSunset`, `legacyNewLayoutDesignsDefault`, `newLayoutDesignsDefault`, `newLayoutDesignsUpgradeCutoff`, `shouldEnableNewLayout`, `layoutTransitionState`, `maximumSunsetTimeout`, `nextSunsetCheckDelay`, `resolveNewLayoutDesigns`, the retirement `setTimeout` and the two `createEffect`s that wrote `newLayoutDesigns` back to the store — along with their tests; `settings.test.ts` keeps only the `isAppUpgrade` / `shouldDisplayTabsToast` block. **Deliberately kept**: `layoutTransitionEligible`, `layoutTransitionClassified` and `setOldLayoutEligible` (with the desktop `isOldLayoutEligible` IPC that feeds them), because the tabs toast still uses eligibility to tell a fresh profile from an existing install — they no longer gate any layout. Also kept: every `newLayoutDesigns()` **read** in `app.tsx` and the `LegacyServerLayout` / `LegacyHome` code behind them. That shell is still mounted on `/:dir` routes, and leaving the branches in place keeps upstream's edits to them applying cleanly; deleting the legacy layout outright is a far larger diff for no user-visible gain. On the test side `legacy-new-session.spec.ts` is deleted (it asserted a redirect to a route that no longer resolves), `session-timeline-projection.spec.ts` drops its one `settings: { newLayoutDesigns: false }` pin, and the timeline-stability fixture drops the `newLayoutDesigns === false` branch that back-dated `app-version.v1`. The many specs that set `newLayoutDesigns: true` are untouched — the value is simply ignored now. The fork-only `packages/app/e2e/regression/layout-theme-lock.spec.ts` covers both locks from a seeded profile; each of its four cases was checked to fail when the matching source file is reverted to upstream's. | The fork ships one layout. Leaving a switch that drops users into a layout the fork does not design for, style-test or screenshot means two UIs to maintain and support, and the upstream sunset date would have retired it anyway. | Keep ours. On conflict take upstream's file and re-apply: the constant `newLayoutDesigns`, the four removed context members, the two deleted Settings sections. If upstream adds a new layout-preference surface, remove it too rather than wiring it up. Do **not** \"restore\" `setNewLayoutDesigns` to make a new upstream caller compile — delete the caller. Do not delete the `LegacyServerLayout` branches in `app.tsx`; they are load-bearing on `/:dir` and deliberately left as upstream's. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-037",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/ui/src/theme/context.tsx`, `packages/app/public/oc-theme-preload.js`, `packages/app/src/theme-preload.test.ts`, `packages/app/src/pages/layout.tsx`, `packages/app/src/components/settings-general.tsx`, `packages/app/src/components/settings-v2/general.tsx` | **One theme in the web/desktop UI; light and dark are the only axis.** Upstream ships 36 selectable palettes with a Settings → Appearance **Theme** picker and command-palette entries. The fork exposes none of them: OC-2 is the theme, `colorScheme` (system/light/dark) is the only appearance choice. The lock lives at `normalize()` in `theme/context.tsx`, renamed to the exported `normalizeThemeID()` and returning the exported `SHIPPED_THEME_ID` unconditionally — that one function is already on every path (provider init, the `onMount` migration, `load`, the cross-tab `storage` listener, `setTheme`, `previewTheme`), so a stored id from before the picker was removed, or one written by another tab, resolves to OC-2 without a second guard. It is exported (and the six call sites renamed) so `theme/context.test.ts` can cover the invariant directly instead of only through its call sites — the module imports cleanly under `bun test` because `import.meta.glob` is called lazily inside `getFiles()`. It also gives the migration for free: `onMount` already rewrites `opencode-theme-id` and calls `clear()` when the raw value differs from the normalized one, which now drops the stale `opencode-theme-css-{light,dark}` cache. `ids()` returns `[\"oc-2\"]` and `loadThemes()` loads only OC-2 instead of all 36 (it was `Promise.all(themeIDs().map(load))`). The bundled theme JSON, the `names` map and `registerTheme` are **left alone** — unreferenced data costs nothing and keeps upstream's theme edits applying cleanly. `oc-theme-preload.js` does the same rewrite *before* mount, so the first launch after upgrading does not paint the user's old palette for a frame; with no other theme reachable its cached-CSS `<style>` injection is gone and it only sets the mode attributes. Removed surfaces: the **Theme** `SettingsRow`/`SettingsRowV2` in both Settings screens (with the `…/themes` docs \"Learn more\" link, `themeOptions`, the `ThemeOption` type and the `onMount(loadThemes)` that fed them), and in `pages/layout.tsx` the `theme.cycle` command with its `mod+shift+t` keybind, the `cycleTheme` helper and the `theme.set.<id>` command loop (with `availableThemeEntries`). The **colour-scheme** commands stay: `theme.scheme.cycle` (`mod+shift+s`), the three `theme.scheme.<scheme>` entries and their preview/commit wiring. i18n keys (`settings.general.row.theme.*`, `command.theme.cycle`, `command.theme.set`, `toast.theme.title`) are left in the dicts — unused keys are harmless and removing them only creates conflicts. | Every fork surface — the brand, the icons, the screenshots, the docs — is drawn against OC-2. A palette picker means 36 combinations nobody verifies, and a user on Synthwave '84 files bug reports about a UI the fork never shipped. Light/dark still covers the real need. | Keep ours. Take upstream's surrounding changes; re-apply the `normalize()` constant, the `ids()`/`loadThemes()` narrowing, the preload rewrite, and the removed rows/commands. If upstream adds a new theme-selection surface, remove it rather than wiring it up. Do not \"fix\" `normalize()` back to the `oc-1 → oc-2` mapping — that mapping is a subset of what it does now. Leave the bundled theme files and `names` map in place; deleting them is a much bigger conflict surface for no gain. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Fork-only i18n (vi locale) must be re-applied to v2 locales"
     },
     {
       "id": "v1-038",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/pages/session/timeline/message-timeline.tsx` | **Session actions menu extracted.** The ⋯ menu beside the session title — both renderings, the legacy `DropdownMenu` and the v2 `MenuV2`, ~145 lines — and the `DialogDeleteSession` closure move to the fork-only `packages/app/src/components/session-actions-menu.tsx` (verbatim at extraction; the v2 Delete item has since dropped its ellipsis and taken the danger colour, so do not diff the two expecting a match), and this file renders `<SessionActionsMenu>` instead, passing its existing `openTitleEditor` / share / `archiveSession` / `deleteSession` as callbacks and its trigger element out through `triggerRef` (the share popover still anchors to it). The extracted dialog takes a resolved `title` and an `onConfirm` rather than a `sessionID`, so the caller supplies `sessionTitle(sync().session.get(id)?.title)`. The `title` store loses `pendingRename`/`pendingShare`: deferring Rename and Share until the menu's `onCloseAutoFocus` is now the component's job, since every caller needs it (a list row's inline editor is blurred by the returning focus exactly as the header's was). Also gains one fork-only `createEffect` that consumes `consumeSessionShareRequest(sessionID())` and opens the share popover — the session rows' Share routes through it. | The sidebar's Recents rows and the home session list open the same menu; three copies of four items would drift. Only this file rendered the menu, so extraction is the smallest way to share it. | Keep the extraction. On conflict, take upstream's `message-timeline.tsx` wholesale and re-apply: delete both inline menu blocks and the local `DialogDeleteSession`, mount `<SessionActionsMenu>` with the same callbacks, drop the two `pending*` store fields, and re-add the share-request effect. If upstream adds a menu item, add it to `session-actions-menu.tsx` (both variants) rather than back here. Do not \"simplify\" the component's deferred rename/share into a plain `onSelect` — focus return is what it exists to survive. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-039",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/pages/home.tsx` | `HomeSessionRow` gains the same `<SessionActionsMenu>` (hover/focus/menu-open revealed, vertical dots) and inline rename: while renaming, the row renders a `div` with `InlineEditor` instead of the `button`, because an input inside a button is invalid markup and swallows keystrokes into the open-session handler. `NewHome` holds one `createInlineEditorController()` for the list and passes it plus the model down. Its local `archiveSession` is deleted — `createHomeModel()` owns `archiveSession`/`renameSession`/`deleteSession` now, so the sidebar and this screen run one implementation (extends the \"state both screens need moves to home-model.tsx\" split in the persistent-sidebar row above); the call site becomes `model.archiveSession`. Upstream's `SHOW_HOME_SESSION_ARCHIVE` block is left exactly as-is — the flag is `false`, so it renders nothing, and touching it would widen the diff for no gain. `data-component=\"home-session-row\"` and every other selector are untouched (`packages/app/e2e` binds to them); the menu adds `data-action=\"session-menu\"`. | The Recents rows and \"View all\" are the same list at two sizes; a menu on one and not the other makes \"View all\" a dead end. | Keep our row structure. On conflict take upstream's row and re-apply the menu, the editing branch, and the `model.*` action wiring. Never let a `data-component`/`data-action` hook drift. If upstream re-enables `SHOW_HOME_SESSION_ARCHIVE`, drop that block instead — its absolutely-positioned archive button would sit on top of the menu. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-040",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/pages/home.tsx` | `HomeProjectRow`'s menu ends with `<ProjectRemovalMenuItems>` (fork-only `src/sandbox/project-menu.tsx`) in place of the `<MenuV2.Separator />` + **Close** item. The component owns the separator too, because a sandbox's own project folder offers neither. On a plain server it renders upstream's Close verbatim; on a sandbox an extra mounted folder gets a destructive **Unmount** that removes the folder from `SandboxConfig.mounts` through `api.sandboxes.updateMounts` and then drops the row with `projects.remove()`. `src/workspace/tabs.tsx` exports `primaryFolder` so the component can ask which folder cannot be unmounted; the decision itself is the pure `projectRemoval` in `src/sandbox/mounts-model.ts`. | On Work a project row *is* a folder mounted into a sandbox, so Close — which only hid the row while the sandbox kept the folder — described nothing the user wanted. Removal there means unmounting. Keeping the branch inside a fork-only component leaves this file with one import and one element. | Keep the element and the import; take upstream's other menu changes. If upstream adds items after Close, put them **before** the component — it must stay last, since it owns the trailing separator. Do not pass the row's close handler as the unmount path: `close()` records the folder as user-closed and `src/sandbox/projects.ts` honours that, so remounting it would leave the user with no project. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Sandbox/Work integration is tracked in CODEV-MIGRATION.md (preview stub only)"
     },
     {
       "id": "v1-041",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/pages/home.tsx` (again) | **Session lists keyed by id.** The \"View all\" list iterates `groups().map((group) => group.id)` and, within each group, `group.sessions.map((record) => record.session.id)`, resolving each back through a `createMemo` + `<Show>` rather than handing the objects to `<For>`. `groupSessions` mints new group objects on every call and `createHomeModel`'s records memo mints a new `{session, project, projectName}` wrapper per session on every recompute — the `projects` memo alone returns a fresh array on a pointerdown — and `<For>` keys on reference, so the rows were torn down and rebuilt on recomputes that changed nothing visible. When that landed between a pointerdown and its mouseup the browser had no surviving common ancestor to fire `click` on, so a row's ⋮ menu ignored its first click; the same rebuild could close an open menu or drop an in-progress rename. `data-component=\"home-session-row\"`, `data-action=\"session-menu\"` and the group header refs / opacity keys are unchanged. The fork-only `packages/app/src/components/app-sidebar.tsx` carries the same shape for the Recents list. | A menu that swallows the first click reads as broken, and the cause is structural rather than incidental: any refresh of the session index rebuilt every row. | Keep the id keying. On conflict take upstream's list body and re-apply both `<For>` wrappers. Do not \"simplify\" back to `<For each={groups()}>` / `<For each={group.sessions}>` — that is the bug. If upstream ever makes groups or records referentially stable this can go, but prove it with `packages/app/e2e/regression/home-session-menu-first-click.spec.ts` before removing it. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-042",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| Pinned sessions: `packages/app/src/pages/home.tsx`, `packages/app/src/pages/session/timeline/message-timeline.tsx`, `packages/app/src/pages/layout-new.tsx`, `packages/app/src/i18n/{en,es}.ts` | **Pin a session to a sidebar section of its own.** The fork-only `src/context/pinned-sessions.tsx` holds the pinned ids — one `Persist.global(\"sidebar.pinned\")` record keyed by `ServerConnection.Key`, newest pin first — and `layout-new.tsx` mounts its provider inside `AppSidebarProvider`; that is the nearest point covering all three surfaces, since `NewAppLayout` is the router root. It has to be context rather than state in `createHomeModel()`: the sidebar and the home screen each hold their own model, so two `persisted` stores over one key would write the same storage without sharing memory and a pin would not cross between them until a reload — the same reason the project selection lives in `useLayout()`. `home-model.tsx` (fork-only) derives `pinnedRecords()` / `recentRecords()` from it and `deleteSession` drops the pins of the whole deleted subtree. In `home.tsx`, `groupSessions` takes the pinned records and emits a leading `pinned` group, and pinned sessions are filtered out of the today/yesterday/older groups so they appear once; `HomeSessionRow` passes `pinned`/`onPin` into `<SessionActionsMenu>`. `message-timeline.tsx` passes the same pair, resolving the server the pin belongs to as `params.serverKey ? requireServerKey(params.serverKey) : useServer().key` — it must match what the sidebar's selection resolves to or the header would toggle a pin the sidebar cannot see. New i18n keys `common.pin`, `common.unpin`, `sidebar.pinned`, `home.sessions.group.pinned` in `en` + `es`. Every `data-component`/`data-action` hook is untouched; the new ones are `data-section=\"pinned\"` and `data-slot=\"sidebar-pinned-list\"`. The Pinned list is keyed by session id for the same reason the row above keys the View all lists — it renders the same rebuilt record wrappers. | A purely chronological Recents buries the handful of sessions someone actually returns to, and \"View all\" is the only way back. Pinning is the smallest fix, and it has to be offered wherever a session's menu is or it is undiscoverable. | Keep our structure. On conflict take upstream's `home.tsx` / `message-timeline.tsx` wholesale and re-apply: the `pinned` group id and its filter in `groupSessions`, the `pinnedRecords` argument at the `groups` memo, and the two `pinned`/`onPin` props. If upstream adds its own grouping ahead of Today, fold the pinned group in above it rather than replacing it. Never resolve the header's server key differently from the sidebar's — mismatched keys silently split one user's pins in two. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Fork-only i18n (vi locale) must be re-applied to v2 locales"
     },
     {
       "id": "v1-043",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/e2e/regression/remote-session-settings.spec.ts` | Both tests pick the settings-shortcut modifier by asking the page — `/(Mac|iPod|iPhone|iPad)/.test(navigator.platform)` — through a local `openSettingsDialog(page)` helper, instead of branching on the Node-side `process.platform`. | Upstream's version pressed `Meta+,` whenever the *host* was macOS, but the app resolves `mod` from `navigator.platform` (`IS_MAC` in `src/context/command.tsx`) and Playwright's `devices[\"Desktop Chrome\"]` profile ships a Windows user agent, so the page always reports `Win32`. On a macOS machine the suite therefore pressed Meta while the app listened for Control: the settings dialog never opened and both tests failed, while Linux CI stayed green because there the host branch happened to pick Control anyway. A real macOS browser reports `MacIntel`, so the app is right and only the test was wrong. | Keep our helper. On conflict take upstream's spec and re-apply it. If upstream fixes this itself, drop the row. Worth submitting upstream — it breaks the suite for every macOS developer. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Windows terminal/console behavior needs a check against v2 packages/tui"
     },
     {
       "id": "v1-044",
@@ -267,45 +267,45 @@
     },
     {
       "id": "v1-045",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/theme/assets/codev.json` (new file), `packages/tui/src/theme/index.ts`, `packages/tui/src/context/theme.tsx` | Added the `codev` theme — upstream's `opencode.json` palette with `darkSecondary` → `#0891b2` (brand teal) — registered it in the theme index, and made it the default/fallback theme (`\"opencode\"` → `\"codev\"` in the store default, kv fallback, and load-failure fallbacks). `theme/assets/opencode.json` itself matches upstream again. | Brand accent lives in a fork-owned theme instead of edits to upstream's palette; the default theme carries the brand. | Keep our theme file, its index registration, and the fallback strings; when upstream changes the opencode palette, mirror it into `codev.json` (keeping our `darkSecondary`). |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "GitHub trigger (/codev) must be re-applied to the v2 github integration"
     },
     {
       "id": "v1-046",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/opencode/src/cli/ui.ts` | `wordmark`/`logo()` render the lowercase codev wordmark via `ansiWordmark` (bold, no shadow, \"dev\" in brand red on TTY) | Help banner matches the TUI home banner. | Keep our wordmark + logo(); take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-047",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/util/presentation.ts` | `sessionEpilogue` returns only the one-line `Continue  codev -s <id>` hint — dropped the `ansiWordmark` banner and the `Session  <title>` line (and the now-unused `title` input) | The exit transcript (see the exit-transcript row) already prints the conversation on quit; the wordmark + title banner was redundant noise above the resume hint. | Keep the single Continue line; if upstream re-adds a banner/title here, keep it removed. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-048",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/feature-plugins/sidebar/footer.tsx` | Removed the footer's brand + version line entirely (upstream's two-tone \"Open\"+\"Code\" spans, status dot, and `app.version`); the `cwd:branch` path is now the last footer item | The fork's sidebar doesn't advertise the product name/version; the path takes that bottom slot. (Supersedes the earlier single-\"CoDev\"-span rebrand of this line.) | Keep the line deleted; take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-049",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/feature-plugins/sidebar/footer.tsx` | Added the editor-context label above the `cwd:branch` line: `useEditorLabel()` (fork-only `src/context/editor-label.tsx`) supplies the effective selection, an `editorFile` memo formats it via `editorContextFileLabel(...)` at a fixed width of 36 (the sidebar's 42 columns less 2 of padding a side and 2 for the bullet), and `<EditorContextLabel>` renders it — both from the fork-only `./editor-context-label.tsx`. | The open file + selected range belong with the sidebar's other ambient session state rather than in the prompt footer's crowded keybind-hint row; they sit next to the cwd for a single \"where am I working\" group. Moved out of the prompt footer, which no longer shows it at all. | Keep the `useEditorLabel` import, the `editorFile` memo, and the `<EditorContextLabel>` element as the box's first child; take upstream's changes to the path display below it. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-050",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/feature-plugins/sidebar/lsp.tsx` | Whole LSP section wrapped in `<Show when={!off()}>` so it renders nothing when `config.lsp` is falsy; the \"LSPs are disabled\" placeholder text removed (empty state is only \"LSPs will activate as files are read\") | A disabled feature shouldn't occupy sidebar space with a permanent placeholder. | Keep our `Show` wrapper + removed placeholder; take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-051",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/opencode/src/cli/cmd/*.ts` (tui, run, serve, attach, pr, upgrade, uninstall, web) | Help `describe` strings \"opencode\" → \"codev\" | `--help` is the first thing users read. | Keep our strings. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-052",
@@ -321,75 +321,75 @@
     },
     {
       "id": "v1-054",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/routes/session/index.tsx` | Flow transcript: the scrollbox opens with a home-like banner (`Logo` + `home_bottom` tips slot, `placement=\"start\"`) as its first entry for root sessions (subagent sessions keep a plain 1-row pad), its `maxHeight` is clamped to the content height (a `transcriptHeight` signal read off the content's yoga node in the renderer root's `layout-changed` handler, which then re-runs `calculateLayout` so the clamp lands in the same frame — `scrollHeight` is a frame stale there, and painting with a stale clamp flickers during streaming) so the `Prompt` rides directly below the last message, and a trailing flexGrow spacer absorbs the leftover space until content fills the screen (then the prompt is effectively bottom-anchored and the banner scrolls away with history); the session `Prompt` gets home's `placeholder` pool when the session has no messages so the input shows an `Ask anything... \"<suggestion>\"` placeholder like home | Startup lands in an empty session instead of the home screen; the transcript flows top-down like terminal scrollback — logo top-left, input following the conversation down — instead of a bottom-anchored prompt with a void above it. | Keep our banner block inside the scrollbox, the `transcriptHeight` clamp + `layout-changed` listener, the trailing spacer, and the `placeholders` prop; take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Tips view needs a v2 TUI plugin slot adaptation"
     },
     {
       "id": "v1-055",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/routes/session/index.tsx` | Sidebar visibility is session-local: removed upstream's persisted `kv.signal<\"auto\" \\| \"hide\">(\"sidebar\", \"auto\")` (and the `sidebar() === \"auto\" && wide()` branch of `sidebarVisible`); visibility is driven only by the non-persisted `sidebarOpen` signal, which the `session.sidebar.toggle` command flips (supersedes the earlier `\"auto\"` → `\"hide\"` default change) | The right sidebar starts hidden in every session regardless of terminal width or what the user did last session; `ctrl+b`/`<leader>b` only affects the current session. A stale `sidebar` key in existing kv.json files is simply never read. | Keep the kv signal removed and `sidebarVisible` reading only `parentID` + `sidebarOpen`; take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-056",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/routes/session/index.tsx` | Hidden-sidebar surfaces: a `sidebarHint` memo (modified-file count from `sync.data.session_diff`, only when the sidebar is hidden and the session isn't a subagent; label from `sidebarHintLabel` in the fork-only `routes/session/sidebar-hint.ts`) plus a `sidebarShortcut` (`useCommandShortcut(\"session.sidebar.toggle\")`), passed as the `Prompt`'s previously unused `hint` prop — e.g. `ctrl+b 5 modified files`; and a compact `<TodoPanel>` (fork-only `routes/session/todo-panel.tsx` + `todo-panel-model.ts`) mounted inside `<Show when={visible()}>` under an extra `<Show when={!sidebarVisible()}>`, directly above the `session_prompt` slot — up to 4 checkbox items windowed around the active todo plus a summary line (`2 of 6 finished · ctrl+b to show full TODO`), shown only while an unfinished todo exists | The sidebar starts hidden in this fork (see the row above), so users would otherwise never see the agent's plan or modified files or how to reveal them. The panel shows the active todos inline, so the footer hint only needs to cover modified files. | Keep our `sidebarShortcut`/`sidebarHint` memos, the `sidebar-hint` and `todo-panel` imports, the `TodoPanel` mount above the `session_prompt` slot, and the `hint={…}` prop on `<Prompt>` (all additive); take upstream's surrounding changes. If upstream starts passing its own `hint` to this `<Prompt>`, merge the two under one `Show`; if upstream adds its own children to the bottom box, keep `TodoPanel` directly above the prompt slot. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-057",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/routes/session/index.tsx` | Assistant-message trailer dedup: a `suppressed` memo in `AssistantMessage` hides the `▣ Agent · Model` prefix on the last message when it matches the currently selected agent (`local.agent.current()?.name === message.mode`) and model (`local.model.current()` vs the message's `providerID`/`modelID`), since the prompt footer right below already shows that selection; the duration still renders as `Baked for <duration>` (and `interrupted` keeps rendering on aborts), and the trailer box is skipped entirely when suppression leaves nothing to show | The last message's trailer and the prompt footer showed the same agent + model twice, one line apart. | Keep the `suppressed` memo and the `Show` gates around the trailer spans; take upstream's surrounding trailer changes (new suffixes should go inside the existing `<text>` with a `·` separator like `interrupted`). |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-058",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/routes/session/index.tsx` | Trailer extracted from `AssistantMessage` into an exported `MessageTrailer` component (it owns the `model`/`final`/`duration`/`suppressed`/`aborted` memos, which moved with it) and the last assistant message's copy is hoisted out of the transcript: `AssistantMessage` renders it inline only `when={!props.last}`, and `Session` renders `<MessageTrailer message={lastAssistant()} last />` in the pinned block between the todo panel and the `session_prompt` slot. That block is a `<box flexShrink={0} paddingTop={1} gap={1}>` wrapping the todo panel, the trailer and the prompt slot, so a blank row appears only between the parts that actually render and no part carries padding for a neighbour that may be absent; the pinned trailer therefore keeps only `paddingLeft={3}` and the inline one keeps its `<text marginTop={1}>`. | `Baked for <duration>` is footer-grade status, not transcript content: pinned below the todo panel it stays put instead of scrolling away with history, and the two status blocks above the prompt read as one group. | Keep `MessageTrailer` and both call sites; take upstream's surrounding changes. If upstream restructures the trailer, re-apply the extraction and keep the last message's copy out of the `<For>` over messages. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-059",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/plugin/src/tui.ts` | `home_bottom` slot props widened from `{}` to `{ placement?: \"center\" \\| \"start\" }` | The empty-session banner asks `home_bottom` contributors to left-align; optional prop keeps the home route and third-party plugins (no prop → centered) unchanged. | Keep our `placement` prop; take upstream's other slot-map changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Tips view needs a v2 TUI plugin slot adaptation"
     },
     {
       "id": "v1-060",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/feature-plugins/home/tips.tsx` | `home_bottom` slot fn reads the new `placement` prop; with `\"start\"` the tips box left-aligns (`flex-start`) and drops its `paddingTop` 3 | The top-left session banner needs the tip flush under the logo; the centered home route keeps upstream spacing. | Keep our `placement` threading + conditional alignItems/paddingTop; take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Tips view needs a v2 TUI plugin slot adaptation"
     },
     {
       "id": "v1-061",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/feature-plugins/system/which-key.tsx` | `HomeHint` reads the new `placement` prop from the `home_bottom` slot; with `\"start\"` it left-aligns | Same top-left banner alignment as the tips row above. | Keep our `placement` threading + conditional alignItems; take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Tips view needs a v2 TUI plugin slot adaptation"
     },
     {
       "id": "v1-062",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/routes/home.tsx` | `placeholder` suggestion pool exported (was module-private) | The empty-session view in routes/session/index.tsx feeds the same pool to its prompt, so upstream edits to the suggestions flow through. | Keep the `export` keyword; take upstream's changes to the list. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-063",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/routes/session/permission.tsx`, `packages/opencode/src/cli/cmd/run/permission.shared.ts`, `packages/opencode/test/cli/run/permission.shared.test.ts`, `packages/tui/src/component/error-component.tsx`, `packages/opencode/src/cli/cmd/run/splash.ts` | Visible sentences/badges \"OpenCode\"/\"opencode\" → \"CoDev Code\"/\"codev-code\" (incl. the permission always-allow copy and its test expectations); permission.tsx also registers a local `app.exit.confirm` command mirroring its `app.exit` reject and gathers the confirm binding (double-press Ctrl+C — see the double-Ctrl+C row) | User-facing copy; keep Ctrl+C rejecting the permission prompt as before. | Keep our strings; keep permission.tsx's `app.exit.confirm` command + binding. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-064",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/opencode/src/cli/cmd/run/splash.ts` | The `--mini` entry and exit splashes badge with `badge` (the \"c\" of the codev wordmark) instead of `go.right.slice(1)` (the \"o\" of the `go` mark) — the import and both `const mark = …` lines; header comment \"full opencode entry logo and a compact [O] exit badge\" → \"full codev entry logo and a compact [C] exit badge\". The badge glyphs draw with `input.theme.mark` (brand red) via the local `mark_fg` binding, not the muted `left`/`leftShadow` that upstream uses for the whole banner, and with no shadow — `draw`'s `shadow` param is now optional and the badge calls omit it, so the flat brand-colored outline has no interior fill. | The splash badge is the brand mark users see entering and leaving `codev --mini`; an \"o\" is upstream's, and the muted grey read as chrome rather than branding. `go` itself is untouched — `packages/tui/src/component/bg-pulse-render.ts` still draws the full \"go\" wordmark from it. | Keep the `badge` import, both `mark` assignments, the `mark_fg` badge fg, and the optional-`shadow` `draw` signature; take upstream's surrounding splash changes. If upstream restructures the badge rendering, feed it `badge` in the brand `mark` color rather than reverting to `go`/`left`. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-065",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/opencode/src/cli/cmd/run/theme.ts`, `packages/opencode/test/cli/run/theme.test.ts` | `RunSplashTheme` gains a `mark` field (brand badge color for the mini splash — no shadow color, the badge is a flat outline). `splashTheme` sets `mark` to the `BRAND_MARK` constant (`rgba(brand.red)` — `#ee0033`, imported from `@/cli/logo`) as **truecolor, not quantized**, in both light and dark; `RUN_THEME_FALLBACK.splash` seeds `mark` from the same constant. theme.test.ts asserts `mark` is exactly `[238,0,51]`. Deliberately NOT the run theme's own `secondary` (that is derived from the terminal palette — magenta — and quantizing it gives a dull, off-brand cell). | The badge renders the same \"C\" glyph as the landing page's compact mark (`codev-landing-page` `app/icon.svg`), which is brand red in both modes — so the mini splash, the favicon, and the wordmark's red \"dev\" all agree. The rest of the splash stays palette-matched; the brand mark is a deliberate truecolor exception. Mode-independent, so `splashTheme` keeps upstream's `(theme, indexed)` signature. | Keep the `RunSplashTheme.mark` field, the `BRAND_MARK` constant + `brand` import, the fallback seed, and the test assertion; take upstream's surrounding theme changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-066",
@@ -411,7 +411,7 @@
     },
     {
       "id": "v1-069",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/app.tsx`, `packages/tui/src/context/epilogue.tsx`, `packages/tui/src/routes/session/index.tsx`, `packages/tui/test/app-lifecycle.test.tsx` | Exit transcript. epilogue.tsx: the epilogue setter accepts `string \\| (() => string)`. app.tsx: the `renderer.once(\"destroy\")` listener materializes a thunk epilogue before resolving `shutdown` (it runs before `@opentui/solid`'s own destroy listener, so the reactive tree and sync store are still alive), and the `EpilogueProvider` setter ignores writes once `renderer.isDestroyed` — fixing a pre-existing race where the session route's `onCleanup(() => setEpilogue())` ran during Solid dispose and clobbered the epilogue before `run()` printed it. routes/session/index.tsx: the epilogue effect sets a thunk that prepends a compact transcript of the session (fork-only `util/exit-transcript.ts` + `test/util/exit-transcript.test.ts`, not tracked here) to `sessionEpilogue`, painted with the active theme's colors (truecolor ANSI; error-status tools get the error color, and assistant text gets a line-based markdown approximation of the session's `<markdown>` renderable — headings/bold/italic/inline code/fences/lists/links styled with the theme's `markdown*` colors), reading `messages()`/parts/theme only inside the thunk so message updates don't rebuild it. app-lifecycle.test.tsx: the epilogue test seeds a session with messages and asserts the transcript prints; its session id is `ses_demo` because `dummy` collides with the fork's placeholder route id and the Session route never mounts for it (this collision is why the test failed before), with session-scoped endpoints and a paid model stubbed and a frame-poll wait for the session view before dispatching `app.exit`. | Quitting the TUI restored the alternate screen and threw the conversation away; now the transcript (user `>` prompts, assistant text, dim `⏺ Tool(arg)` one-liners — no thinking, no tool output) survives in terminal scrollback like Claude Code, followed by the usual epilogue. | Keep the thunk union, the destroy-listener materialization, the `isDestroyed` setter guard, the thunk-producing effect, and the test's `ses_demo` id + stubs; take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
@@ -429,15 +429,15 @@
     },
     {
       "id": "v1-072",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/opencode/src/config/config.ts` | `share` defaults to `\"disabled\"` when unset | Sharing publishes sessions to upstream's share service; internal users must opt in via config. | Keep our default block. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-073",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/opencode/src/config/config.ts` | `ensureModuleType(dir)` runs beside `ensureGitignore(dir)` for every config directory: seeds `\"type\": \"module\"` into the dir's `package.json` (creating the file when missing, merging when present, leaving any explicit user-set `type` and unparseable files alone; PermissionDenied swallowed like the gitignore write). Covered by three cases in `test/config/config.test.ts`. | Node loads the dir's TS tools/plugins as ESM, but the `package.json` the dependency install writes carries no `type`, so every tool load printed a `MODULE_TYPELESS_PACKAGE_JSON` warning (plus a re-parse overhead) on the server's stderr. Seeding before the install works because Arborist preserves fields it does not manage. | Keep the helper and its call next to `ensureGitignore`; take upstream's surrounding changes. If upstream adds its own fix, prefer theirs and drop ours. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-074",
@@ -453,15 +453,15 @@
     },
     {
       "id": "v1-076",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `.opencode/` (repo root, whole directory) | Renamed to `.codev/`; inner `opencode.jsonc` → `codev.jsonc`; internal `.opencode/` path mentions in `glossary/README.md`, `skills/effect/SKILL.md`, `command/translate.md` updated; the `opencode-local` reference → `codev-local` pointing at `~/.local/share/codev` | This is the repo's own dogfooding config dir; after the config-dir rename row below, the agent only discovers `.codev/`. | Keep our directory; re-apply upstream's `.opencode/**` changes into `.codev/` (sync surfaces them as modify/delete or add conflicts). |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "GitHub trigger (/codev) must be re-applied to the v2 github integration"
     },
     {
       "id": "v1-077",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| Config-dir rename: `packages/opencode/src/config/{paths,config,tui}.ts`, `packages/core/src/config.ts`, `packages/opencode/src/plugin/install.ts`, `packages/opencode/src/plugin/tui/runtime.ts`, `packages/tui/src/context/theme.tsx`, `packages/opencode/src/cli/cmd/{agent,mcp}.ts`, `packages/opencode/src/session/session.ts`, plan permission patterns (`packages/opencode/src/agent/agent.ts`, `packages/core/src/plugin/agent.ts`), TUI tips, skill descriptions, `customize-opencode.md`, `specs/tui-plugins.md`, tests creating `.opencode` fixtures, docs (en + es) | Config directory `.opencode` → `.codev` (project walk-up, `~/.codev`, plans dir, theme/plugin discovery) | The fork's config surface uses the fork's name; hard rename, no legacy fallback. NOT renamed: `~/.opencode/bin` install paths (binary location — see installation/uninstall rows), the `ai.opencode.managed` plist domain, identifiers like provider id `opencode` and theme asset keys. | Keep our dir name; take upstream's surrounding logic. Rename any new upstream `.opencode` dir reference to `.codev` (leave `~/.opencode/bin`). |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (v1 session code is gone; re-verify behavior against the v2 session core)"
     },
     {
       "id": "v1-078",
@@ -471,9 +471,9 @@
     },
     {
       "id": "v1-079",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/component/dialog-provider.tsx` | The \"Other\" custom-provider option routes into the fork-only `runCustomProviderFlow` (component/dialog-custom-provider.tsx, new file) — id → API key → optional base URL → model discovery via `/v1/models` → `provider.<id>` block PATCHed into global codev.json (key stays in auth.json) — instead of upstream's credential-only `ApiMethod`; the local `promptCustomProviderID` helper moved into that flow (upstream's \"only stores a credential\" description no longer holds). `ApiMethod`'s `custom` prop is now unreferenced but left in place. | An empty base URL keeps upstream's credential-only behavior; with one, the provider is usable without hand-editing codev.json. The configure gate's \"Custom provider\" option shares the same flow. | Keep our `onSelect` + import and the helper deletion; take upstream's changes to `ApiMethod`/other methods (the flow only wraps the entry point). |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-080",
@@ -489,99 +489,99 @@
     },
     {
       "id": "v1-082",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/prompt/index.tsx` | The busy-state footer arm (`status().type !== \"idle\"`) also renders `props.hint` after the `esc interrupt` text, gated on `status().type !== \"retry\"` | The hidden-sidebar hint (see the `routes/session/index.tsx` hint row) only rendered in the footer `Switch`'s idle fallback arm, so it vanished for the whole duration of a running turn — exactly when todos are being created. Retry keeps its `space-between` error row uncluttered. | Keep the `<Show when={status().type !== \"retry\" && showBusyHint()}>{props.hint}</Show>` line in the busy `Match` arm (additive); take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-083",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/prompt/index.tsx` | Width-tiered busy footer: module-level `BUSY_FOOTER_PALETTE_MIN_WIDTH` (108) and `BUSY_FOOTER_HINT_MIN_WIDTH` (88) drive a `showPaletteHint` memo (`status().type === \"idle\" \\|\\| width >= 108`) wrapping the `<shortcut> commands` text and a `showBusyHint` memo (`width >= 88`) added to the busy arm's `props.hint` gate | The busy row carries spinner + interrupt hint + sidebar hint + context/cost; as the terminal narrows flexbox runs the gaps to zero (cramped but intact) and below ~85 columns the row wraps to two lines and clips the cost. Shedding by value keeps it on one line down to 70: the static palette hint goes first, then the modified-file count; the spinner and interrupt hint never go. | Keep both constants, both memos and the two `Show` gates; take upstream's surrounding changes. Re-measure the thresholds if segments are added to the row. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-084",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/prompt/index.tsx` | The footer's right slot renders key hints and usage independently instead of upstream's either/or `Switch` (`usage()` else hints): module-level `FOOTER_HINTS_AND_USAGE_MIN_WIDTH` (120) drives a `usageMeta` memo (usage data, shown when `width >= 120` or `status().type !== \"idle\"`) and a `showKeyHints` memo (`!usageMeta() \\|\\| width >= 120`) replacing the inner `Switch`/`Match` pair with two sibling `Show` gates. Covered by `test/footer-width.view.test.tsx`. | Upstream shows the `shift+tab modes` / `tab agents` hints only while the session has no assistant output tokens, so one prompt permanently swaps them for the context/cost readout and the shortcuts stop being discoverable. A wide terminal fits both; narrower ones show the hints while idle (when you'd press them) and usage while busy (when it's changing). | Keep the constant, both memos and the two `Show` gates; take upstream's surrounding changes. Re-measure the threshold if segments are added to the row. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-085",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/prompt/index.tsx` | Removed the editor open-file label from the footer's right-side group and lifted the state behind it out of `Prompt`: the local `dismissedEditorSelectionKey` signal and the `editorContext`/`editorPath`/`editorSelectionLabel`/`editorFileLabel`/`editorFileLabelDisplay`/`editorContextLabelState` memos are gone, replaced by `useEditorLabel()` (fork-only `src/context/editor-label.tsx`) — `selection()` feeds the `prompt.editor_context.clear` `enabled` predicate and the submit-time editor part, `state()` replaces `editor.labelState()` there, and `dismiss()` replaces the local `dismissEditorContext`. The pure helpers `hasEditorRangeSelection`/`getEditorRangeLabel` moved to that context module and are imported back for `formatEditorContext`. | The label now lives in the sidebar footer (see its row above). The dismissal state had to move with it: the sidebar must label the *effective* selection — the one this file actually attaches on submit — or it would advertise context the prompt has dismissed and won't send. | Keep the deletions, the `useEditorLabel` import + its three call sites, and the helper import from `../../context/editor-label`; take upstream's surrounding changes. If upstream reworks the editor-context label, apply the change to `editorContextFileLabel` in the fork-only sidebar module rather than restoring the footer render. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-086",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/routes/session/index.tsx`, `packages/tui/src/component/prompt/index.tsx` | Left accent border removed entirely: the user-message block's `border={[\"left\"]}`/`borderColor` (agent accent)/`customBorderChars` props and the prompt input box's two bordered boxes (main box with its `bottomLeft: \"╹\"` char, plus the height-1 `╹` terminator row) are replaced with `paddingLeft={1}`; the now-unused `borderHighlight` memo and the `tint`/`SplitBorder` imports are removed from the prompt (the `highlight`/`agentMetaAlpha` memos stay — they still color the agent name label); the fork's in-scrollbox banner box gains `paddingLeft={1}` so the banner/tips left edge lines up with the prompt/message blocks' background edge (the removed border glyph used to occupy that aligned column); `BlockTool` (expanded tool-output panels) likewise drops its `border={[\"left\"]}`/`customBorderChars`/`borderColor` (the background-colored `┃` glyph over the panel background rendered as a stray vertical line on the panel's left edge) and bumps `paddingLeft` 2 → 3 to keep the content column | No vertical accent line next to sent messages, the prompt, or tool-output panels — removed rather than recolored to the background because background-colored glyphs render oddly on some terminals (e.g. PowerShell). `paddingLeft={1}` keeps the same 1-column offset, so text alignment with other transcript blocks is unchanged. | Keep our `paddingLeft={1}` boxes and the `borderHighlight`/`tint`/`SplitBorder` removals; take upstream's surrounding changes. If upstream adds new accent-colored left borders to these blocks, replace them with `paddingLeft={1}` the same way. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-087",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/spinner.tsx` | `SPINNER_FRAMES` swapped from cli-spinners \"dots\" (10 braille frames) to cli-spinners \"sand\" (35 braille frames, falling-sand animation); interval stays 80 ms | Fork visual identity for the shared `Spinner` component (in-progress tool/thinking rows, startup loading, session-list dialogs). | Keep our frames array; take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-088",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/prompt/index.tsx` | Busy footer spinner is cli-spinners \"aesthetic\" instead of the Knight Rider block scanner: module-level `FOOTER_FRAMES` (`▰▱` ramp, 7 chars, 8 frames), `spinnerDef` keeps the agent-color resolution but returns those frames plus a per-char color fn (`▰` → agent color, `▱` → `deriveInactiveColor(color, 0.3)`) instead of `createFrames`/`createColors` from `ui/spinner`, and the `<spinner>` interval is 120 ms (was 40; cli-spinners' stock 80 felt too fast). `ui/spinner.ts` itself is untouched; only its `deriveInactiveColor` import remains. | Fork visual identity for the busy indicator next to `esc interrupt`; the agent accent color still drives it. | Keep `FOOTER_FRAMES`, our `spinnerDef` body, the `deriveInactiveColor` import, and the 120 ms interval; take upstream's surrounding changes. If upstream reworks `spinnerDef`, re-apply the aesthetic frames + per-char color fn on top. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-089",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/prompt/index.tsx`, `packages/tui/src/routes/session/index.tsx` | Compact prompt/footer spacing: the input box's interior `paddingTop={1}` is replaced by a height-1 half-block top-edge row above the box (`border={[\"top\"]}`, `horizontal: \"▄\"` when `backgroundElement` is opaque, `\" \"` otherwise — mirror of the existing `\"▀\"` bottom-edge row; the agent/model meta row keeps its `paddingTop={1}`), and the session content container loses its `paddingBottom={1}` and its `gap={1}` (the gap fired between every pair of children — transcript↔prompt, and prompt↔the trailing flexGrow spacer, where it left a phantom blank row under the footer even at zero spacer height; the half-block lip is now the only transcript↔prompt separation) so the prompt footer line sits on the terminal's last row | The prompt box was a row taller than its content needed, a full blank row sat between the transcript and the box, and the footer floated 2 rows above the bottom edge; the half-block lip keeps a visible box edge above the text at half the height. | Keep the top-edge lip row and the padding/gap removals; take upstream's surrounding changes. If upstream restyles the box edges, re-apply the symmetric half-block lips and keep the container un-padded. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-090",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/routes/session/footer.tsx` | Deleted. The file exported a `Footer` component (cwd, pending-permission count, LSP/MCP counts, `/status`) that nothing imports — it is dead upstream too, superseded there and here by the sidebar footer and the home footer. | Its contents live in `feature-plugins/sidebar/footer.tsx` (cwd:branch, editor-context label) and `feature-plugins/home/footer.tsx` (dir, MCP, `/status`, version); keeping an unreferenced third copy invites edits to a component that never renders. | Take upstream's version only if upstream starts importing it again; otherwise re-delete (`git rm`) after a sync reintroduces the file. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-091",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/component/prompt/index.tsx` | The agent/permission-mode/model/provider/variant row moved out of the input box: it was the second child of the `backgroundElement` box under the `<textarea>` (with `paddingTop={1}`), and is now the first child of the prompt's root box, above the `▄` top-edge row, carrying `paddingLeft={3} paddingRight={2}` so it lands on the same columns as before. The `session_prompt_right` slot moved with it. | The line describes what the *next* prompt will use, not what is in the box, so it reads as a header for the input rather than a caption under it, and it now groups with the pinned trailer and todo panel as one status block above the box. Net row count is unchanged: the box loses its interior blank row, the pinned block's `gap` spends one. | Keep the row in its new position; take upstream's surrounding changes. If upstream restructures the input box, re-lift the row rather than merging it back inside. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-092",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/routes/session/question.tsx` | Selection/hover highlight color: a `highlight` memo (`tint(theme.backgroundPanel, theme.text, 0.1)`) replaces `theme.backgroundElement` on the active option row (number + label boxes, both the option list and the \"Type your own answer\" row) and on the question/Confirm tab hover state | `backgroundElement` sits ~1.04x off `backgroundPanel` in light themes (`#f5f5f5` on `#fafafa` for `codev`), so the selected answer had no visible highlight; blending the panel toward the theme's text color keeps a neutral band that is ~1.2x in both modes and works for generated/system themes too. | Keep the `highlight` memo and its four/two call sites; take upstream's surrounding changes. If upstream adds new `backgroundElement` highlights in this panel, point them at `highlight()` too. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-093",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/app.tsx` | Mounted `<EditorLabelProvider>` (fork-only `./context/editor-label`) immediately inside `<EditorContextProvider>` | The effective-editor-selection state is shared by the prompt and the sidebar footer, so it has to be provided above both. | Keep the import and the wrapper; take upstream's surrounding provider changes. If upstream moves `EditorContextProvider`, keep ours directly inside it. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-094",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/index.html` | `<title>` → \"CoDev\" | Web UI tab title. | Keep our title. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-095",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/app/src/pages/layout.tsx`, `packages/app/src/pages/layout-new.tsx` | Dropped the `<TabsInfoPopup />` mount and its import from both layouts (added upstream in v1.17.18; since v1.18.3 upstream itself removed the sibling `HelpButton`, so nothing is imported from `help-button` anymore) | `TabsInfoPopup` is a dev-channel-only \"Introducing Tabs\" promo whose `muted autoplay loop` `<video>` mounts on every layout render. The fork's Windows e2e runs on GPU-less GitHub-hosted runners (software GPU — see the runner-swap row), where continuous video decode wedges the GPU command buffer (`kTransientFailure`), making the whole app-e2e suite flaky and ~3–5× slower. It never ships (release builds use a non-`dev` `CODEV_CHANNEL`), so unmounting it costs users nothing. | Keep ours: don't re-add the `<TabsInfoPopup />` mount or restore it to the import. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-096",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/app/src/components/help-button.tsx` | Deleted (as of the v1.18.3 sync). The fork had removed the `TabsInfoPopup` component and its `introducing-tabs.mp4` import, keeping the rebranded `HelpButton`; upstream v1.18.3 deleted `HelpButton` itself, leaving only the popup — so nothing remains and the file is gone. | The popup is upstream's temporary, OpenCode-branded \"Introducing Tabs\" promo (upstream's own comment says it's removable after the rollout), unmounted per the row above; removing the definition lets the 13 MB video be deleted (row below). | Keep deleted (`git rm` the upstream side of modify/delete conflicts). If upstream mounts `TabsInfoPopup` somewhere new, drop that mount per the row above. When upstream deletes the popup itself, this row and the rows around it retire. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-097",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/app/src/assets/help/` (introducing-tabs.mp4, placeholder.png, home.png, tabs.png — whole directory) | Deleted | The 13 MB promo video's and the v1.18 home/tabs screenshots' only consumer was the removed `TabsInfoPopup` (row above) and they bloat every clone; `placeholder.png` is referenced by nothing. | Keep deleted (`git rm` the upstream side of modify/delete conflicts); delete new upstream assets under this directory whose only consumer is the removed popup. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-098",
@@ -597,9 +597,9 @@
     },
     {
       "id": "v1-100",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| Hardcoded product-string rebrand in TUI + web app: `packages/tui/src/app.tsx`, `packages/tui/src/routes/session/permission.tsx`, `packages/tui/src/attention.ts` (+ `packages/opencode/test/cli/cmd/tui/attention.test.ts`), `packages/app/src/wsl/settings-model.ts` (+ `.test.ts`), `packages/ui/src/components/favicon.tsx` | User-visible \"OpenCode\" strings outside the i18n dicts → fork brand: update-complete toast \"Successfully updated to OpenCode v…\" → \"CoDev Code\"; permission dialog \"…until OpenCode is restarted\" → \"CoDev Code\" (the sibling patterns line was already rebranded); OS-notification fallback title `opencode` → `codev` and built-in sound-pack display name \"OpenCode Default\" → \"CoDev Code Default\" (pack id `opencode.default` stays — internal identifier; the three default-title expectations in `packages/opencode/test/cli/cmd/tui/attention.test.ts` follow, while its explicit-title pass-through fixture stays `opencode`); WSL settings actions \"Install/Update OpenCode\" → \"…CoDev\" (+ test expectations/titles; fixture paths `/usr/local/bin/opencode` stay); PWA `apple-mobile-web-app-title` \"OpenCode\" → \"CoDev Code\" (matches the rebranded `site.webmanifest`, favicon-assets row) | These render in surfaces the fork ships (TUI + embedded web UI); the i18n-dict strings remain a known gap (UI branding bullet below). | Keep our strings; take upstream's surrounding changes. Rebrand any new hardcoded user-visible \"OpenCode\" string in these surfaces; leave identifiers, URLs, and fixture paths. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-101",
@@ -645,33 +645,33 @@
     },
     {
       "id": "v1-108",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/utils/refcount.ts` (+ `.test.ts`) | `createRefCountMap` creates each item in its own root owned by the scope that created the map (disposed when the last pinning caller releases it), and callers without a reactive owner borrow the item without pinning it. | Upstream ran `create` in the *first caller's* scope, so a shared item's internal cleanups (e.g. the dir SDK context's event unsubscribe in `server-sdk.tsx`) fired when that first view closed while other holders still used the item — live updates for the directory silently died. Ownerless callers (event handlers, async continuations: `notification.tsx` session lookup, `layout.tsx` openSession) also registered cleanups Solid warns can never run and pinned items forever. | Keep ours; take upstream's surrounding changes. The two added tests (\"ownerless caller borrows without pinning\", \"item's internal cleanups survive its first caller\") pin the semantics. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (upstream-behavior fix; verify whether v2 still needs it)"
     },
     {
       "id": "v1-109",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/app.tsx`, `packages/app/src/utils/session-route.ts` | `session-route.ts` gains `serverKeyFromRoute`, a non-throwing variant of `requireServerKey` (which is now defined in terms of it and kept for callers that want the throw). `app.tsx`'s `TargetServerRoute` and `LegacyTargetSessionRoute` read the route's server key through it: `TargetServerRoute` holds it in a memo, passes `undefined` rather than a bogus connection to the SDK/sync providers, and falls back to `<Navigate href=\"/\" />`; `LegacyTargetSessionRoute` wraps its `SessionRouteErrorBoundary` in a `Show` on the same memo. | `requireServerKey` throws on a segment that is missing or does not round-trip, and both call sites ran it during render — so the throw escaped from a memo and killed the entire renderer with the fatal error screen. The param does go missing in normal use: removing a server navigates away (`tabs.removeServer` → `navigate(\"/\")`) and the route's params clear before its subtree unmounts, which is how deleting a sandbox with an open session took the window down. Worse, the desktop restores the last active route on launch, so the crash repeated on every relaunch until the persisted URL changed. Rendering nothing was not enough on its own — a `/server/…` route that cannot mount its providers leaves the shell half-built and fails further down in the command registry — hence the redirect home. This is the same class as the `project-avatar-state.ts` guard below and is an upstream bug. | Keep the guard; take upstream's other changes to these files. If upstream makes the route resilient its own way, drop ours in favour of theirs. Do not \"simplify\" the route back to calling `requireServerKey` directly — that is the crash. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Sandbox/Work integration is tracked in CODEV-MIGRATION.md (preview stub only)"
     },
     {
       "id": "v1-110",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/context/server-sdk.tsx` | Event-stream failures log only after 3 consecutive failed attempts (`logStreamIssue`), with the error normalized to `name: message`; any received event resets the count. | The first failed attempt usually races a server being stopped or restarted (sandbox reset, sidecar relaunch): the stream dies before the renderer learns the server is going away and the context is disposed before a real retry, so logging attempt one produced a spurious `[global-sdk] event stream error` for normal lifecycle. A genuinely unreachable server still logs within about a second (250 ms reconnect delay). | Keep the threshold and shared `logStreamIssue`; take upstream's surrounding stream changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Sandbox/Work integration is tracked in CODEV-MIGRATION.md (preview stub only)"
     },
     {
       "id": "v1-111",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/context/command.tsx` | The DEV duplicate-command-id warning fires only for duplicates still present 1 s later (`warnIfPersistentDuplicate`); runtime keep-first behavior unchanged. | Router transitions keep the outgoing page mounted while the incoming one registers, so ids both pages provide (`command.palette`, `input.focus`) are briefly duplicated on every draft→session navigation; only a duplicate that survives the transition is a registration bug. | Keep ours; take upstream's surrounding command changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (upstream-behavior fix; verify whether v2 still needs it)"
     },
     {
       "id": "v1-112",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/desktop/src/main/logging.ts` | Added `initChromiumNoiseFilter`: an electron-log hook dropping two benign Chromium intervention messages (ResizeObserver loop, autofocus blocked) from the console transport for renderer-spied messages; file logs keep them. | The `spyRendererConsole` pipe surfaces Chromium interventions the app can neither cause nor fix as red terminal lines during `bun dev:desktop`. | Keep the hook; take upstream's surrounding logging changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (upstream-behavior fix; verify whether v2 still needs it)"
     },
     {
       "id": "v1-113",
@@ -681,7 +681,7 @@
     },
     {
       "id": "v1-114",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/ui/src/context/dialog.tsx` | Per-dialog `persistent` flag (precedent: the TUI's persistent dialog, see the `packages/tui/src/ui/dialog.tsx` row): Escape, backdrop click, and Kobalte `onOpenChange` are no-ops for a dialog marked persistent; programmatic `close()` still works; `setPersistent` targets the top dialog so pushed sub-dialogs stay dismissable; `useDialog()` gains `persistent`/`setPersistent`. | The desktop configure gate needs a dialog the user cannot dismiss while no provider is configured. | Keep the flag and the three guards; take upstream's surrounding dialog changes. |",
       "evidence": "Needs manual review against v2"
     },
@@ -699,15 +699,15 @@
     },
     {
       "id": "v1-117",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/components/prompt-input-v2.tsx` | `onUnpaidClick` opens `DialogConnectProvider` (lazy import) instead of the free-models \"unpaid\" dialogs; their now-unused imports dropped. (The legacy `prompt-input.tsx` carried the same swap until its deletion — see the legacy prompt-input removal row.) | With the hosted providers hidden, \"unpaid\" means nothing is connected, and the free-models dialogs would render empty lists (this path is reachable on the web deployment; on desktop the gate covers it). | Keep the handler swap; take upstream's surrounding prompt-input changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Gateway/provider flow needs v2 integration"
     },
     {
       "id": "v1-118",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/desktop/src/renderer/index.tsx` | Calls `installConsoleFormatting()` (fork-only `./console-format`) before anything else logs. | `spyRendererConsole` receives Chromium's flattened console-message string, so any renderer `console.*` with an object argument reached the terminal and the exported debug logs as `[object Object]`; the wrapper serializes structured arguments (Error-aware, circular-safe, truncated) at the source. | Keep the import and call; take upstream's surrounding entry changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (upstream-behavior fix; verify whether v2 still needs it)"
     },
     {
       "id": "v1-119",
@@ -723,9 +723,9 @@
     },
     {
       "id": "v1-121",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/vite.js` | Added `optimizeDeps.entries`: the default `index.html` plus session-ui's `markdown.worker.ts` (absolute path derived from the plugin file, forward-slashed for fast-glob), so the dev-time dep scanner crawls the markdown worker at startup. | Vite's dep scanner does not crawl `?worker&url` entries, so the worker's deps (`@shikijs/stream`, `katex`, `marked`, `marked-shiki`, `remend`, `shiki`) were first discovered when the first markdown rendered; that mid-session re-optimize full-page reloads the dev app — e.g. a Skill Hub search reset itself the moment results rendered. A bare `optimizeDeps.include` list cannot express this fix: with bun's isolated linker the deps live only in the workspace packages' own `node_modules`, and no single include chain resolves from both consumers' roots (`packages/app` and the desktop renderer's `src/renderer`). Dev-only; production builds ignore `optimizeDeps`. | Keep the `optimizeDeps` block and keep `index.html` listed in it — setting `entries` replaces Vite's default entry inference, so dropping it unscans the app itself. If upstream moves or renames the worker file, update the path: a stale pattern matches nothing, logs nothing, and silently brings the reload back. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (upstream-behavior fix; verify whether v2 still needs it)"
     },
     {
       "id": "v1-122",
@@ -741,9 +741,9 @@
     },
     {
       "id": "v1-124",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/desktop/src/main/index.ts` | Deleted upstream's `app.commandLine.appendSwitch(\"proxy-bypass-list\", \"<-loopback>\")`. | Chromium's `<-loopback>` bypass rule means the opposite of what it reads as: it *subtracts* the implicit rules that keep loopback off the proxy, i.e. it opts localhost traffic *into* proxying (`net/docs/proxy.md`). Today it is inert — Electron reads `--proxy-bypass-list` only together with `--proxy-server` (`shell/browser/browser_process_impl.cc`), which the app never passes — but it becomes actively harmful the moment anything launches the app with `--proxy-server`: the renderer's sidecar traffic would be routed into the proxy. Chromium already bypasses loopback by default, so nothing replaces it. | Keep deleted. If upstream adds new proxy switches, check them against Chromium's implicit-bypass semantics before taking them. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (upstream-behavior fix; verify whether v2 still needs it)"
     },
     {
       "id": "v1-125",
@@ -771,13 +771,13 @@
     },
     {
       "id": "v1-129",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| Dual-path WSL install: `packages/desktop/src/main/wsl/{runtime,servers}.ts` | `runtime.ts`: three internals gain `export` (`runPowerShell`, `runInteractiveCommand`, `resolveSystem32Command`) — no behavior change. `servers.ts`: the `install-wsl` job calls `installWslRuntimeDualPath` and the `install-distro` job calls `installWslDistroDualPath` (both from the fork-only `install-bundle.ts`, which holds all new logic) instead of `installWslRuntimeElevated` / `installWslDistro` directly; the `install-wsl` job additionally treats exit 3010 (`WSL_INSTALL_REBOOT_REQUIRED`, re-raised by the fork's elevated script) as success with `pendingRestart: true` rather than as a failure — `wsl --version` answers from the freshly installed MSI before the just-enabled VirtualMachinePlatform is active, so no post-install probe can detect the pending reboot; otherwise both return the same `WslCommandResult` shape and the surrounding job/error handling is untouched. | The customer fleet sits behind whitelist-only proxies that cannot reach Microsoft's servers. The dual path downloads from the codev storage host — the runtime as a per-architecture MSI named by its own manifest (`/codev/installers/wsl/manifest.json`, assets under `/codev/installers/wsl/<version>/`) and staged through `stageAsset` for resume + sha256 verification, the distro from the pinned `wsl.zip` — enables VirtualMachinePlatform and Microsoft-Windows-Subsystem-Linux via offline dism + installs the MSI behind one UAC prompt (Windows 10 requires the WSL optional component even for the standalone MSI — without it every `wsl` distro command fails with Wsl/WSL_E_WSL_OPTIONAL_COMPONENT_REQUIRED; on machines that already have it dism is a no-op), and falls back to upstream's `wsl --install` / `--web-download` paths only when the download cannot be *obtained* — a completed-but-failed elevated install is returned as-is, never retried behind a second UAC prompt. | Keep the two call swaps, the 3010 handling in `install-wsl`, and the three `export` keywords; take upstream's surrounding changes. If upstream reworks `installWslRuntimeElevated` / `installWslDistro`, keep them exported from `runtime.ts` — `install-bundle.ts` calls them as the fallback path. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "GitHub trigger (/codev) must be re-applied to the v2 github integration"
     },
     {
       "id": "v1-130",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/desktop/package.json` | Added the `test` script (`bun test src --only-failures`). | The package had 21 test files and no way to run them: with no `test` script, `bun turbo test` skipped it and every desktop test was dead weight. Scoped to `src` (like `@opencode-ai/ui`) so the built `out/` tree is never scanned. Paired with the `turbo.json` row — the script alone does not enrol the package in CI. | Keep ours. If upstream adds its own `test` script, take theirs only if it covers `src`. |",
       "evidence": "Needs manual review against v2"
     },
@@ -795,9 +795,9 @@
     },
     {
       "id": "v1-133",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/components/server/server-row-menu.tsx` | The trailing **Delete** item carries `style={{ \"--menu-v2-fg\": \"var(--v2-state-fg-danger)\" }}`. Nothing else changes — same `disabled={builtin}`, same `handleRemove(key)`, same position after the separator. | Delete rendered in the same colour as Edit and Set as default, so the one irreversible action in the menu carried no more weight than the rest. The session actions menu already colours its Delete this way; this brings the server menu in line. It has to be the CSS variable rather than a text utility: `menu-v2.css` colours the item **and** its `menu-v2-item-content` label span from `--menu-v2-fg`, so a class on the item never reaches the label. | Keep the style prop. On conflict take upstream's item and re-apply it. Do not swap it for a Tailwind text colour — that silently only recolours half the item. The disabled state dims by `opacity` alone, so the red survives it. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-134",
@@ -819,9 +819,9 @@
     },
     {
       "id": "v1-137",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/desktop/src/renderer/index.tsx` | Desktop notification icon `https://opencode.ai/favicon-96x96-v3.png` → the relative `./favicon-96x96-v3.png`. The renderer's `publicDir` is `packages/app/public`, whose `favicon-96x96-v3.png` symlinks to the rebranded `packages/ui/src/assets/favicon/` mark, so the file is emitted next to `index.html` and resolves against the renderer origin (`oc://renderer/` packaged, the vite dev server otherwise) — the same asset and the same relative form `src/renderer/index.html` already uses for `<link rel=\"icon\">`. | A desktop app should not reach out to a remote host to draw its own notification icon (it fails offline and leaks a request per notification), and the remote file is upstream-branded while the bundled one is the codev mark. | Keep our relative path. If upstream changes the URL, re-point it at the bundled asset rather than taking a new remote host. `packages/app/src/entry.tsx` and `pages/layout/helpers.ts` keep their remote `opencode.ai/favicon*` sources — same bug class, not yet fixed. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-138",
@@ -831,9 +831,9 @@
     },
     {
       "id": "v1-139",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| Work loading state: `packages/app/src/pages/home.tsx`, `packages/app/src/i18n/{en,es}.ts` | `NewHome` gains `useWorkspaceSide()` + `useSandboxes()` and a `waitingForSandbox()` memo over the fork-only `packages/app/src/workspace/waiting.ts`, which drives two things. (1) The session list's empty fallback becomes a `Show`: while Work waits it renders the fork-only `HomeSandboxLoading` — a `Spinner` at `size-8` over the `workspace.loading.sandbox` label, centred in the pane — and otherwise upstream's `HomeSessionsEmpty`, unchanged. (2) `HomeSessionSearch` is wrapped in `<Show when={!waitingForSandbox()}>`. New i18n key `workspace.loading.sandbox`. `HomeSessionSkeleton` and the Code-side loading branch that uses it are untouched. `HomeSandboxLoading` carries the wrapper's own `min-h-[calc(100cqh-72px)] lg:min-h-[calc(100cqh-96px)]` rather than `min-h-full`: the wrapper has a min-height and an auto height, so a percentage would resolve against the content and centre nothing. | A sandbox takes minutes to create and seconds to boot, and for all of it the session list said \"Nothing here yet / Create a session to get started\" over a search box — the one action offered could not work, since the server that would run the session did not exist yet, and the search had nothing to search. Its own view rather than the session skeleton: that skeleton stands in for rows about to arrive, which is true of a server's session load and false here, where nothing arrives for minutes. | Keep the memo, the wrapping `Show` around the fallback, and the `Show` around `HomeSessionSearch`; take upstream's surrounding changes. `HomeSessionsEmpty` must stay reachable — it is all Code ever renders here. If upstream restructures the session pane, re-apply both `Show`s; they are independent. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Sandbox/Work integration is tracked in CODEV-MIGRATION.md (preview stub only)"
     },
     {
       "id": "v1-140",
@@ -891,9 +891,9 @@
     },
     {
       "id": "v1-149",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/components/titlebar.tsx` | The effect that opens a tab for the session the route points at now skips servers that are not in `global.servers.list()`. | The tab store prunes tabs whose server left the list (`context/tabs.tsx`), and this effect adds one back for whatever the route names — so a route pointing at a server that is momentarily absent puts the two in a loop: prune, re-add, prune, at about a thousand rounds a second. The renderer never yields, so it also never processes the IPC event that would bring the server back, and the window stays wedged until it is killed. Sidecar connections are published only while healthy (`readySandboxConnections`/`readyWslConnections`), so any restart drops one: reproduced by adding a folder to a sandbox while one of its sessions was open, which restarts the guest to apply the mount. The route is deliberately left alone — the tab returns on its own when the server comes back. This is an upstream bug (WSL servers hit the identical path). | Keep the guard; take upstream's other changes to the effect. If upstream fixes it their way, drop ours in favour of theirs. Do not \"simplify\" the guard away — an unguarded add against the pruner is the hang. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Sandbox/Work integration is tracked in CODEV-MIGRATION.md (preview stub only)"
     },
     {
       "id": "v1-150",
@@ -927,9 +927,9 @@
     },
     {
       "id": "v1-155",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/ui/src/assets/favicon/` (favicon-v3.svg, favicon-v3.ico, site.webmanifest, favicon-96x96-v3.png, apple-touch-icon-v3.png, web-app-manifest-192/512.png) | New codev mark: the blocky \"C\" in brand red `#ee0033` on a white tile, generated from the same geometry as the app icon by `packages/desktop/scripts/generate-icons.ts` (4x5 grid, one-unit stroke, unit = 120/1024, corner radius 229/1024); `favicon-v3.svg` is the hand-written 512-unit source of that geometry. The tab and `.ico` icons keep the rounded tile so they read as an app icon; `apple-touch-icon-v3.png` and the two maskable `web-app-manifest-*` icons are square and full-bleed, because iOS and PWA launchers apply their own mask and a pre-rounded icon leaves transparent corners that render black. Manifest name \"CoDev Code\"/\"codev\"; its `theme_color`/`background_color` stay `#080808` — those describe the PWA's chrome and splash, not the icon. **Was `#00cdcd` on a dark tile** until this row was rewritten: PR #10 pinned the favicon to the then-cyan TUI banner accent, that banner later moved to the navy/red wordmark, and the favicon was left behind as the only cyan in the tree — visibly so on desktop, where the dock icon was red while the window and notification icons were cyan. | Every surface that draws the mark should draw the same mark: the dock icon, the tab, notifications, the `codev --mini` badge and the landing page icon are now one geometry in one red. Cyan on `#131010` was the higher-contrast tile at 16px (~9.4:1 versus red's ~4.2:1) — a real cost, accepted so the brand reads consistently. | Keep our assets (binary: take ours wholesale). Regenerate with the script rather than hand-editing, and edit `icons/icon.svg` + `favicon-v3.svg` together if the geometry ever changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Codev brand surface (wordmark, theme, favicon, titles) via @codev/brand and v2 theme tokens"
     },
     {
       "id": "v1-156",
@@ -939,15 +939,15 @@
     },
     {
       "id": "v1-157",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `README.md` | Replaced with fork README | Fork identity, sync + divergence policy. | Keep ours entirely. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-158",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `CONTRIBUTING.md`, `SECURITY.md` | Product-brand prose \"OpenCode\" → \"CoDev Code\"; built-CLI command examples `opencode …` → `codev …` | Docs people actually read should name the fork's product. Upstream issue/advisory links, `packages/opencode` paths, and build-output paths stay upstream; env-var mentions follow the env-var rename row. | Keep our strings; take upstream's structural changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Docs rebrand: apply @codev/brand wording to the fork docs when they are refreshed"
     },
     {
       "id": "v1-159",
@@ -957,15 +957,15 @@
     },
     {
       "id": "v1-160",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `CONTEXT.md` | Product-brand prose \"OpenCode\" → \"CoDev Code\" (title, intro, and defined terms such as \"CoDev Code Client\" / \"Embedded CoDev Code\") | The V2 design glossary should name the fork's product; the renamed terms appear only in this file, so nothing desyncs. `@opencode-ai/*` package names stay upstream; env-var mentions follow the env-var rename row. | Keep our brand strings; take upstream's design changes (this file evolves with the V2 session core — merge content, re-apply the brand rename). |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Docs rebrand: apply @codev/brand wording to the fork docs when they are refreshed"
     },
     {
       "id": "v1-161",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `STATS.md` | Deleted | Upstream's download-stats log; meaningless for the fork. | Keep deleted. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-162",
@@ -975,21 +975,21 @@
     },
     {
       "id": "v1-163",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `README.*.md` (21 translations) | Deleted | Upstream marketing translations, irrelevant to the fork. | Keep deleted (`git rm` the upstream side of modify/delete conflicts). |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-164",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `screenshot-uk.png` | Deleted | Orphaned README-translation asset; referenced by nothing. | Keep deleted. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-165",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `artifacts/` (whole directory) | Deleted | Upstream's Remotion marketing-video project (`glm52-rise-video`) with rendered MP4/PNG binaries committed; irrelevant to the fork and bloats every clone. | Keep deleted (`git rm` the upstream side of modify/delete conflicts); delete new upstream additions under `artifacts/` too. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-166",
@@ -1011,15 +1011,15 @@
     },
     {
       "id": "v1-169",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `github/` (whole directory) | Deleted — `action.yml` was a composite action living in this repo, so `uses: quickbeard/codev-code/github@main` resolved for nobody outside it; its only job was installing the public `codev-code` npm package and running `codev github run`, which the documented workflow now does inline (see the `github.handler.ts` row). With the action gone the rest of the directory was orphaned: `index.ts` was a standalone duplicate of the `githubRun` logic that `action.yml` never invoked, and the package was not a member of the root `workspaces` list, so nothing built, tested, or imported it. `README.md` content now lives in the fork's docs at `content/docs/code/{en,vi}/github.mdx` in [codev-landing-page](https://github.com/quickbeard/codev-landing-page) | The fork's repo is private and owned by a user account, not an org, so GitHub cannot share an action in it with any other repository — every user who copied the documented workflow hit \"repository not found\" on their first run. The npm package is public, so inlining the steps is the only distribution path that works, and it leaves the whole directory dead. The fork has no GitHub App and its share service defaults off (config.ts row), so sharing defaults off here too | Keep deleted (`git rm` the upstream side of modify/delete conflicts); delete new upstream additions under `github/` too. If this repo ever goes public and the action is worth restoring, restore `action.yml` only and re-point the docs. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-170",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/opencode/src/cli/cmd/github.handler.ts` | CLI side of the GitHub integration rebranded to match `github/` (row above). `githubRun`: `MENTIONS` default `/opencode,/oc` → `/codev`, generated branches `opencode/*` → `codev/*`, comment footer `[opencode session]` → `[codev session]`, visible log/prompt strings \"opencode\" → \"codev\", and `USE_GITHUB_TOKEN` defaults to **true** when unset (upstream returns false). `githubInstall`: no longer installs upstream's GitHub App (browser flow + `api.opencode.ai` install poll removed); scaffolds `.github/workflows/codev.yml` (was `opencode.yml`) triggering on `/codev` with `contents`/`issues`/`pull-requests: write` permissions, an `npm install -g codev-code` step and a `codev github run` step carrying `GITHUB_TOKEN` and `MODEL` in `env` — no `uses:`, see the `github/` row; next-steps text says `/codev summarize` and links the fork's hosted docs at `/docs/code/github` (the `github/` README it used to link is deleted). | The trigger phrase, branches, footer, and scaffolded workflow are user-facing. The fork has no GitHub App to install, so OIDC token exchange can never succeed here: `USE_GITHUB_TOKEN` must default true, or an unset variable sends users down the exchange path and fails asking for `id-token: write`. Upstream's false default was masked while the composite action passed the input explicitly; deleting the action exposed it. NOT renamed: `AGENT_USERNAME` `opencode-agent[bot]` (upstream App bot identity, used for reaction cleanup in the app-token path), `api.opencode.ai` exchange endpoints, the `opencode-github-action` OIDC audience, `opencode.ai` share URLs, and the social-cards URL. | Keep our trigger/branch/footer strings, the app-less install flow, the `USE_GITHUB_TOKEN` true default, and the actionless scaffold; take upstream's surrounding logic changes. If upstream adds new user-facing \"opencode\" strings or workflow scaffold changes, rebrand them the same way; never let a scaffold change reintroduce `uses: quickbeard/codev-code/github@main`. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-171",
@@ -1029,21 +1029,21 @@
     },
     {
       "id": "v1-172",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `.github/TEAM_MEMBERS` | Deleted | Upstream's team roster. The five workflows that read it (pr-standards, pr-management, triage, duplicate-issues, compliance-close) fetch it from a `dev` branch this fork doesn't have, so they are already inert here. | Keep deleted. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-173",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `nix/node_modules.nix` | `lib.fileset.unions` entry `../.github/TEAM_MEMBERS` → `lib.fileset.maybeMissing ../.github/TEAM_MEMBERS` | Upstream lists that path as a hard fileset member for `@opencode-ai/script`; the fork deleted the file (row above), so `nix-eval` fails with `Element …/TEAM_MEMBERS is a path that does not exist`. `Script.team` already tolerates absence. | Keep `maybeMissing`; if upstream switches to it first, drop this row. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-174",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/script/src/index.ts` | Guard the `.github/TEAM_MEMBERS` read: fall back to an empty team list when the file is absent instead of throwing at module load | This module is imported by the publish path (`publish.ts`); the deleted `TEAM_MEMBERS` (row above) made `bun run release` crash with ENOENT. `Script.team` has no consumers in the fork. | Keep our `exists()` guard; take upstream's surrounding changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Upstream marketing/translation/stats assets; fork README and docs are maintained separately"
     },
     {
       "id": "v1-175",
@@ -1059,27 +1059,27 @@
     },
     {
       "id": "v1-177",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/core/test/ripgrep.test.ts` | `120_000` timeout on both `it.live` tests | First use downloads + extracts the ripgrep binary; GitHub-hosted Windows runners blow bun's 5s default. | Keep our timeouts; take upstream's test changes. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-178",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/opencode/test/cli/run/run-process.test.ts`, `packages/opencode/test/cli/acp/lifecycle.test.ts`, `packages/opencode/test/server/httpapi-file.test.ts`, `packages/opencode/test/server/httpapi-sdk.test.ts`, `packages/opencode/test/effect/runner.test.ts`, `packages/opencode/test/session/prompt.test.ts`, `packages/opencode/test/project/instance-bootstrap.test.ts` | Slow-runner headroom: unknown-model test `timeoutMs`/bound 15s → 30s (test timeout 60s); the two unknown-stream-finish `codev run` subprocess tests (\"unknown stream finish preserves partial output…\", \"--format json records partial output for an unknown stream finish\") `timeoutMs` 30s → 60s and test timeout 60s → 120s (pure-upstream spawn tests that pay `codev run` cold-start; neither asserts on duration, so headroom only); the three tool-executing `codev run` subprocess tests (\"prints each completed text part in order around a tool continuation\", \"--format json preserves reasoning, tool, and continuation ordering\", \"rejects requested permissions by default and allows them with the dangerous flag\") `timeoutMs` 30s (harness default) → 60s explicitly, test timeout 60s → 120s — 240s for the permissions test, which pays three sequential `codev run` spawns; these pay cold-start *plus* a real `bash` tool spawn and a continuation turn, and were timing out at exactly the 30s harness default on loaded runners; none asserts on duration, so headroom only; ACP stdin-EOF exit timeout 5s → 30s; file-search-index poll 5s → 120s with a 150s test timeout (the search-endpoints test pays ripgrep's first-use download on Windows runners, like ripgrep.test.ts); Runner fiber-coordination `Effect.timeout` guards 250ms/1s → 10s (pure hang-detectors on already-unblocked awaits; Windows runners starve the event loop past 250ms); prompt.test.ts's two `sleep`-based loop/shell tests (\"loop waits while shell runs…\", \"shell completion resumes queued loop callers\") moved from `it.instance` to the file's own `unix` helper so they skip on Windows like their `unixNoLLMServer` siblings (`sleep` isn't on Windows, so the shell fiber hangs to the budget — a genuine hang, not slowness); instance-bootstrap's first test 30s → 60s (pays instance cold-start); httpapi-sdk's `serverPathParity` helper passes an explicit 120s to `it.live`, covering every parity test in that file (30s harness default → 120s) — each drives a whole route family end to end and several shell out to git/ripgrep or probe the formatter and LSP; \"matches generated SDK instance read routes\" hit exactly the 30s default when the rest of the suite was competing for the machine (~5s unloaded, so headroom only). Applied in the helper rather than per call site to keep the upstream call sites byte-identical | Loaded GitHub-hosted runners spawn processes, fetch ripgrep, and build the lazy file index slower than upstream's Blacksmith runners; 250ms–30s budgets flake or fail outright, and Unix-shell tests can't run on Windows at all. Hang regressions are still caught (a hang exceeds the bound; polls return as soon as ready). | Keep our numbers and the `unix` gating; take upstream's test changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-179",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/opencode/test/tool/external-directory.test.ts`, `packages/opencode/test/tool/read.test.ts` | Windows path-variant tests keep the drive letter in the `alt` form (drop the `.replace(/^[A-Za-z]:/, \"\")` step) | A drive-less path is drive-relative: it resolves against the CWD's drive (D: on GitHub-hosted Windows) while the temp dir lives on C:, so the file genuinely isn't there. Slash + case variants still exercise normalization. | Keep our `alt` construction; take upstream's test changes. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-180",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/opencode/test/tool/write.test.ts` | \"sets file permissions when writing sensitive data\" asserts `stats.mode & 0o777` equals `0o666 & ~process.umask()` instead of a hardcoded `0o644` | The write tool never chmods — it calls `fs.writeWithDirs`, so the mode is just the 0o666 creation default masked by the process umask. `0o644` silently encodes the umask 022 that CI runners happen to use, and the test fails with `0o664` on any developer machine running the equally common umask 002. The assertion still pins the tool to the platform default (a stray chmod would break it). | Keep our umask-derived expectation; take upstream's test changes. If upstream ever makes the tool chmod explicitly, drop this row and assert the explicit mode. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-181",
@@ -1101,9 +1101,9 @@
     },
     {
       "id": "v1-184",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| Generated clients: `packages/client/src/contract.ts`, `packages/client/test/promise.test.ts`, `packages/client/src/generated/{client,types}.ts`, `packages/client/src/generated-effect/client.ts`, `packages/sdk/js/src/v2/gen/{sdk,types}.gen.ts` | `contract.ts` maps `\"server.skillhub\": \"skillhub\"` and names its endpoints `listStacks`/`prepareStack`/`installStack`/`discardStack` and `listSkills`/`getSkill`/`installSkill`; `promise.test.ts` expects `\"skillhub\"` last in the group list; the generated trees carry the group. | The fork-only protocol group must reach both SDKs; the endpoint names are overridden because the codegen's default (last id segment) would give `list`/`prepare`/`install`, which collide once single-skill routes join the group. | Keep our `contract.ts` entries and the test expectation; never hand-merge the generated trees — run `bun run generate` in `packages/client` and `./packages/sdk/js/script/build.ts` after resolving the protocol. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Generated clients are regenerated with `bun run generate` in packages/client, never hand-merged"
     },
     {
       "id": "v1-185",
@@ -1143,19 +1143,19 @@
     },
     {
       "id": "v1-191",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/context/language.tsx`, `packages/app/src/entry.tsx`, `packages/desktop/src/renderer/i18n/index.ts`, `packages/console/app/src/i18n/index.ts`, `packages/console/app/src/lib/language.ts`, `packages/console/app/src/component/footer.tsx`, `packages/stats/app/src/i18n.ts`, `packages/enterprise/src/app.tsx`, `packages/app/e2e/regression/session-timeline-locale-projection.spec.ts` | Locale registries trimmed to `en` + `es`, then extended with fork-added `vi`: `Locale` types, LOCALES/LABEL/TAG/DOCS maps (console maps `vi` to the published `/docs/vi` segment), dict loaders, accept-language matchers; enterprise/entry `zh` special cases now use `es` (both also match `vi`); console footer always links Discord (Feishu was zh-only); e2e locale-projection spec tests `es` (\"Explorado\") instead of de/ar | Fork ships English + Spanish + fork-authored Vietnamese. | Keep our locale lists (including `vi`); take upstream's structural changes, re-trim any new upstream locale entries, and re-apply the `vi` entries alongside them. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Fork-only i18n (vi locale) must be re-applied to v2 locales"
     },
     {
       "id": "v1-192",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/app/src/i18n/{en,es}.ts` (`language.vi` label), `script/translate-app.ts`, `script/translate-app.test.ts` | Added Vietnamese (`vi`) as a fork-only third locale: autonym label `\"language.vi\": \"Tiếng Việt\"` inserted into the en/es app dicts' language list; `vi`/\"Vietnamese\" registered in the translate script's locale tables (desktop surface included — only `th`/`tr` are excluded); `glossaryFile` repointed `.opencode/glossary/` → `.codev/glossary/` (test expectations updated) so glossaries actually load from the fork's renamed config dir. The dictionaries themselves — `packages/{app,ui}/src/i18n/vi.ts`, `packages/desktop/src/renderer/i18n/vi.ts`, `packages/console/app/src/i18n/vi.ts`, `packages/stats/app/src/i18n/vi.ts` — and `.codev/glossary/vi.md` are fork-only new files (not tracked per policy). | Vietnamese docs are published on the fork's docs site (`…/codev/vi/docs`), and the product UI should match. Upstream has no `vi` locale, so the new files never collide with upstream content. | Keep our `vi` entries and the `.codev` glossary path; take upstream's surrounding script/dict changes. If upstream ever adds a `vi` locale, prefer our translations and reconcile key-by-key. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "GitHub trigger (/codev) must be re-applied to the v2 github integration"
     },
     {
       "id": "v1-193",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/tui/src/component/prompt/autocomplete.tsx`, `packages/opencode/src/cli/cmd/run/footer.prompt.tsx`, `packages/core/src/filesystem/search.ts`, `packages/tui/test/fixture/tui-sdk.ts`, `packages/opencode/test/cli/run/footer.view.test.tsx`, `packages/core/test/filesystem/search.test.ts` | `@` mention autocomplete lists file/directory results before references/agents/MCP resources; TUI and run-CLI menus cap the leading files so up to 3 non-file matches stay in the first visible page. TUI and run-CLI file resources track menu visibility so opening on an empty query fetches (previously nothing refetched until the query changed); core's ripgrep-fallback `find` returns its first entries for an empty query to mirror fff. Tests: tui-sdk fixture's `FetchHandler` gains an optional `method` arg, `renderFooter` accepts `findFiles`/`agents` overrides + a mention-menu ordering test, core search tests cover the fallback's empty query (fork-only test file: `packages/tui/test/prompt-autocomplete.test.tsx`). The legacy web prompt originally carried the same reorder (fork-only `prompt-input/at-options.ts`); it was deleted with the legacy prompt input (see the removal row below), and the V2 composer's files-first ordering is tracked in its own `session-ui` row (PR #289). | Files are the dominant `@` use case; they should rank first and appear on a bare `@`. | Keep our ordering/reserve logic, resource source tracking, empty-query branch, fixture/test additions; take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
@@ -1167,9 +1167,9 @@
     },
     {
       "id": "v1-195",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/config/keybind.ts`, `packages/tui/src/component/prompt/index.tsx`, `packages/tui/src/app.tsx` | Permission-mode indicator + shift+tab cycle. keybind.ts: added `permission_mode_cycle: keybind(\"shift+tab\", ...)` + its `permission.mode` CommandMap entry; `agent_cycle_reverse` default `\"shift+tab\"` → `\"none\"` (tab still cycles agents forward; previous-agent stays rebindable). prompt/index.tsx: the footer badge next to the agent name always renders in prompt mode — gray `manual` (`theme.textMuted`) in normal mode, red `auto` (`theme.error`) in auto mode (upstream only showed gray `auto`); the footer's shortcut hints gain a `shift+tab modes` text (via a `modeShortcut` `useCommandShortcut(\"permission.mode\")` memo) left of `tab agents`, in the same `Show` gate (see the hints-and-usage row above for when that gate renders). app.tsx: `\"permission.mode\"` added to `appBindingCommands` so the binding is gathered. | The permission mode is always visible (manual/auto) with auto in red as a danger signal, and shift+tab toggles it without opening the palette. | Keep the `permission_mode_cycle` definition + mapping, the `agent_cycle_reverse` `\"none\"` default, the badge `Show` block, the `modeShortcut` memo + hint text, and the `appBindingCommands` entry; take upstream's surrounding changes. If upstream reworks the auto badge or rebinds shift+tab, re-apply on top and re-audit the shift+tab conflict. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-196",
@@ -1179,9 +1179,9 @@
     },
     {
       "id": "v1-197",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/tui/src/context/permission.tsx`, `packages/tui/src/app.tsx`, `packages/tui/src/ui/dialog-confirm.tsx`, `packages/tui/src/ui/toast.tsx` | Auto-approve consent gate. permission.tsx: mode always starts `\"normal\"` (upstream initialized it from `args.auto`); `toggle()` replaced by `set(mode)` plus a per-run `consented` flag + `consent()`. app.tsx: shared `enableAutoApprove()` (title in the `AUTO_APPROVE_TITLE` module const, body from an `autoApproveMessage` accessor, and a shorter one-line `autoApproveToast` accessor for the toast, which only has a few seconds on screen; both redden the word \"dangerous\" with `theme.error` and are passed unevaluated because renderables can only be created during render) shows a `DialogConfirm` opened on cancel and, on confirm, a warning toast under the same title, then sets the mode; both entry points funnel through it — an `onMount` when `args.auto` is set, and the `permission.mode` command (shift+tab / palette), which enables via the gate and disables directly. Consent is asked once per run; later toggles are silent. dialog-confirm.tsx: optional `defaultChoice` prop + 5th `DialogConfirm.show` arg selecting the initially-active button (omitted keeps upstream's confirm-first default); `message` widened to `JSX.Element \\| (() => JSX.Element)` and called at the render site. toast.tsx: same `message` widening, resolved by a `message()` helper in `Toast()` (fork-only test file: `packages/tui/test/auto-approve-consent.view.test.tsx`). | Auto-approve is dangerous, so `--auto` (and its hidden aliases) and the first shift+tab into auto require explicit confirmation; declining or dismissing the dialog stays in manual mode, opening on cancel keeps a stray return from granting it, and the risk word is red like the `auto` badge. | Keep the consent flag + gate flow, the `toggle()` removal, the `defaultChoice` prop, and the accessor-aware `message` on both dialog and toast; take upstream's surrounding changes. If upstream adds new writers of the permission mode, route their enable path through `enableAutoApprove()`. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-198",
@@ -1215,9 +1215,9 @@
     },
     {
       "id": "v1-203",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `turbo.json` | Added tasks `\"@codev/sandbox#test\"` and `\"@opencode-ai/desktop#test\"` (both no deps, no outputs) | CI's `bun turbo test` only runs test tasks registered here; the fork-only sandbox package's tests must gate PRs, and the desktop package ships 21 test files that ran nowhere until its task was registered. Neither needs `^build`: both packages' workspace dependencies export TypeScript source. | Keep our task entries; take upstream's other tasks. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Sandbox/Work integration is tracked in CODEV-MIGRATION.md (preview stub only)"
     },
     {
       "id": "v1-204",
@@ -1227,15 +1227,15 @@
     },
     {
       "id": "v1-205",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/desktop/src/main/draft-store.{ts,test.ts}` | Upstream's buffered SQLite draft store (v1.18.12) hardened: `PRAGMA synchronous=NORMAL` added beside WAL; `putBlob` no longer writes synchronously at call time — blobs ride the same 500ms pending buffer as documents and flush in the flush transaction, with `getBlob` reading pending first; the test loads `./draft-store` lazily and `test.skipIf`s when `node:sqlite` is unavailable (Bun's test runtime lacks it; Electron main is Node and has it). | `DatabaseSync` runs on the Electron main thread. With SQLite's default `synchronous=FULL`, every 500ms flush commit fsyncs the WAL, and upstream's `putBlob` did a synchronous multi-MB write + fsync mid-composer-interaction — the same main-thread-blocked-on-disk failure class the fork's settings store was rebuilt to remove (see the async settings stores row). NORMAL confines fsync to checkpoints; buffering the blob keeps attachment drops off the interaction path. | Keep the pragma, the `pendingBlobs` buffer, and the lazy test import; take upstream's schema/logic changes. If upstream itself moves the store off the main thread (worker), take theirs and drop ours. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (upstream-behavior fix; verify whether v2 still needs it)"
     },
     {
       "id": "v1-206",
-      "status": "pending",
+      "status": "drop",
       "sourceRow": "| `packages/opencode/.gitignore`, `packages/opencode/script/build-node.ts` | `.gitignore` keeps `script/build-*.ts` but adds `!script/build-node.ts`; `build-node.ts` is tracked (fork-adapted `CODEV_*` defines). | The ignore pattern (present since the fork's first commit) swallowed the desktop node-sidecar script that `packages/desktop/scripts/{predev,prebuild}.ts` invoke. Local machines that already had the file built fine; a clean CI checkout failed with `Module not found \"script/build-node.ts\"`. Upstream tracks the same script. | Keep the exception + tracked file; never let a sync drop `build-node.ts` behind the glob again. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "v1 build/release/packaging scripts; v2 uses codev2 packaging (see DIVERGENCES.md and CODEV-MIGRATION.md)"
     },
     {
       "id": "v1-207",
@@ -1251,9 +1251,9 @@
     },
     {
       "id": "v1-209",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/app/src/components/session/session-new-design-view.tsx` (kept), `packages/app/src/pages/{home,new-session}.tsx` (kept wholesale), upstream's `packages/app/src/pages/{home,new-session}/*` controller/view split (shipped unused) | Upstream v1.18.x split `home.tsx` (1.8k lines) and `new-session.tsx` into controller/view modules and deleted `session-new-design-view.tsx`. The fork's heavily diverged versions of all three are kept as-is (sidebar-based home, centred composer, fork menus); upstream's new `pages/home/*` and `pages/new-session/*` files are left in-tree but unreferenced. | The fork's home/new-session UX is a deliberate product divergence (see the sidebar/home rows); re-basing it onto the new controller split is real design work, not conflict resolution. Keeping upstream's unused modules costs dead code but keeps their future churn conflict-free. | Keep our three files; let upstream's split modules apply clean. When adopting the split, migrate the fork features into the controllers and delete the fork files + this row. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-210",
@@ -1299,25 +1299,25 @@
     },
     {
       "id": "v1-217",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| Empty-after-thinking continuation: `packages/opencode/src/session/prompt.ts` (+ `packages/opencode/test/session/prompt.test.ts`) | On the run-loop exit that treats a non-`tool-calls`/`unknown` finish as done, a turn with finish `stop`/`length`, no error, and no deliverable text/tool is no longer an idle exit: up to `EMPTY_AFTER_THINKING_MAX` (2) times the loop either auto-compacts (when `isOverflow`) or injects a synthetic user continuation, then continues; after the cap it records an `APIError` with `metadata.code: MessageOutputLengthError` and a continue hint, then breaks. Tests cover recover-then-succeed and exhaust-then-error. | Reasoning-only clean finishes looked like a successful stop; users saw Thinking then silence. Complements the vanished-stream row (`unknown`/missing finish) which does not cover `stop`/`length`. | Keep the empty-thinking branch ahead of the `unknown` error recording; take upstream's surrounding loop-exit changes. If upstream ships empty-after-reasoning recovery, prefer theirs where they overlap. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (v1 session code is gone; re-verify behavior against the v2 session core)"
     },
     {
       "id": "v1-218",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| Vanished-stream retry + visibility + persisted retry parts: `packages/opencode/src/provider/error.ts`, `packages/opencode/src/session/{processor,retry,prompt,message-v2}.ts`, `packages/session-ui/src/components/message-part.tsx`, `packages/tui/src/routes/session/index.tsx`, `packages/ui/src/i18n/{en,es}.ts`, tests `packages/opencode/test/session/{retry,message-v2,processor-effect}.test.ts`, `packages/opencode/test/cli/run/run-process.test.ts` | error.ts: new `ProviderError.StreamVanishedError`. processor.ts: `ProcessorContext.produced` (set on `text-delta`/`tool-input-start`/`tool-call`, reset per attempt); after the stream drains, a turn with no output, no error, and finish `undefined`/`\"unknown\"` fails with `StreamVanishedError` so the existing `SessionRetry.policy` retries it (visible \"retrying… attempt #N\" status). retry.ts: `retryable()` gains an optional `attempt` param (policy passes `meta.attempt`); `STREAM_VANISHED_CODE` matches `metadata.code` and stops after `STREAM_VANISHED_MAX_RETRIES` (5) with a vanished-specific backoff that plateaus at `STREAM_VANISHED_MAX_DELAY` (8s — 2s/4s/8s/8s/8s; these errors are synthesized locally and never carry Retry-After, so `delay()` owns them in a dedicated branch), so a deterministic provider quirk cannot re-bill turns forever while flaky proxies get a few extra tries. message-v2.ts: maps `StreamVanishedError` → `APIError{isRetryable:true, metadata.code}`; new `transportInterruptCode()` walks the cause chain for `ECONNRESET`/`EPIPE`/`ETIMEDOUT`/`UND_ERR_SOCKET` so undici's mid-stream `TypeError(\"terminated\")` (cause `SocketError \"other side closed\"`) becomes a retryable `APIError` instead of an unretryable `Unknown` (AbortedError when `ctx.aborted`). prompt.ts: the run-loop exit records a visible `APIError` (\"the reply may be incomplete\") on a message whose finish is `\"unknown\"` with no error, instead of going idle silently — mirrors upstream's own content-filter precedent. Persisted retry parts: the schema's dormant `RetryPart` (already in `@opencode-ai/schema/session-v1` and the generated SDKs, previously never written or rendered) is now written per retry attempt — `SessionRetry.policy`'s `set` callback gains the parsed `error`, and processor.ts persists `{type:\"retry\", attempt, error, time}` via `session.updatePart` before publishing the live retry status — and rendered by a new `PART_MAPPING[\"retry\"]` component in session-ui's message-part.tsx (error-card style, message + \"retried - attempt #N\" line; new i18n key `ui.messagePart.retry.retried` en/es) and by a `PART_MAPPING[\"retry\"]` entry in the TUI's routes/session/index.tsx (a muted one-liner aligned with the transcript — error-colored `Retried` label, `(attempt #N) · <error message truncated to 120>`, mirroring the footer's live `Retrying (attempt N) · message` wording; fork-only view test `packages/tui/test/retry-part.view.test.tsx`). Upstream's two `codev run` subprocess tests that pin the old contract (\"unknown stream finish preserves partial output and exits 0\" — renamed here to \"…retries and preserves partial output\" — and \"--format json records partial output for an unknown stream finish\") are updated to the retrying behaviour: each queues an explicit reply after `llm.fail(...)` so the retry consumes it instead of the test server's auto-\"ok\", stdout carries both turns, and the json test asserts the extra `step_start,text,step_finish` trio with the vanished step still finishing `\"unknown\"` and the retried one `\"stop\"`. What they lock in is unchanged: an SSE error item is not fatal — exit stays 0, pre-failure output survives, and the provider message never reaches stderr. | A provider (or corporate proxy) that drops the SSE mid-turn ended the run with no retry, no error card, no banner — the agent \"just stopped\" and only a user-typed \"continue\" resumed it. Empty turns are safely retried (nothing to duplicate); turns with output are not rerun but now say why they ended. | Keep our `produced` tracking, the post-drain fail, the classifier cap, the transport-code walk, the loop-exit error, and the two retry-part renderers (session-ui and TUI `PART_MAPPING[\"retry\"]` entries); take upstream's surrounding changes. If upstream ships its own abnormal-finish handling, prefer theirs and drop ours where they overlap. Good upstream-PR candidate. The two `run-process.test.ts` expectations are ours only because the retry is: if upstream's version of that file conflicts, re-apply the queued-reply shape on top of their test body; if their behaviour is adopted instead, revert these two tests to upstream wholesale. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (v1 session code is gone; re-verify behavior against the v2 session core)"
     },
     {
       "id": "v1-219",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/session-ui/src/v2/components/prompt-input/interaction.ts` | The `@` mention popup's `contextList` grouping delegates to the fork-only `at-options.ts` beside it (`atSuggestionCategory` + `compareAtCategories`, unit-tested in the fork-only `at-options.test.ts`): suggestion groups rank recent → file → reference → agent → resource instead of upstream's reference → agent → resource → recent → file, so file results lead in the V2 composer — the prompt the desktop and web apps render now that the legacy layout is retired. The grouped menu scrolls, so no row-reserve logic is needed (unlike the TUI/run-footer variants), and default selection stays index 0, so Enter accepts the top file match. `contextList`'s resolver also searches on an empty query — it used to return the fixed entries plus open tabs without asking, so a bare `@` listed no files at all and the ordering above had nothing to order (the same empty-query gap the TUI and run-footer fixed in the `@` autocomplete row above). Covered by the fork-only `packages/app/test-browser/prompt-at-menu.test.ts` and the e2e `packages/app/e2e/regression/prompt-at-menu-files.spec.ts`. | Files are the dominant `@` use case; the earlier files-first reorder (see the `@` autocomplete row above) covered the TUI, the legacy web prompt, and the `codev run` footer but missed the V2 composer. | Keep the two-line delegation to `at-options.ts`; take upstream's surrounding changes. If upstream restructures the suggestion list, re-apply the ranking wherever context suggestions are grouped. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (source paths absent in this repo)"
     },
     {
       "id": "v1-220",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| Legacy prompt input removed: deleted `packages/app/src/components/prompt-input.tsx` and its now-orphaned submodules `packages/app/src/components/prompt-input/{attachments,files,paste,transient-state}.ts`, `{context-items,drag-overlay,image-attachments,slash-popover}.tsx`, `image-attachments.css`, `attachments.test.ts`, `packages/app/test-browser/{prompt-attachments,prompt-transient-state,prompt-at-options}.test.ts` (plus the fork-only `at-options{,.test}.ts`); edits in `packages/app/src/pages/session.tsx`, `packages/app/src/pages/session/composer/{session-composer-region-controller.ts,todo-panel-motion.stories.tsx}` | The fork hardcodes `newLayoutDesigns` to `true` (see the settings.tsx row), so the legacy `PromptInput` — the `fallback` of session.tsx's `<Show when={newSessionDesign()}>` — could never render. session.tsx now creates the V2 controller unconditionally and always mounts `PromptInputV2Composer` (no `Show`); `session-composer-region-controller.ts` imports `PromptInputState` from `prompt-input/contracts` (where it is defined) instead of the deleted barrel; the todo-panel-motion story fills its composer-region `promptInput` slot with a static styled placeholder instead of the legacy component (its unused `controls` mock removed). Kept: `prompt-input/{contracts,history,history-store,placeholder,submit,editor-dom,build-request-parts,submission-state}.ts` and their tests — the V2 composer path still uses them. | Dead code: retired with the legacy layout, kept compiling for months, and PR #56-style fixes had to be applied to it for nothing. | Keep deleted — `git rm` the upstream side of modify/delete conflicts on these files, and delete any new module upstream adds under `prompt-input/` that only the legacy `PromptInput` imports. Take upstream changes to the kept shared modules. If upstream restructures session.tsx's composer block, re-apply \"always render the V2 composer\" and keep the legacy fallback out; if upstream rewires the story's input slot, keep our placeholder. If the fork ever wants the legacy layout back, restore from upstream, not from history. |",
       "evidence": "Needs manual review against v2"
     },
@@ -1329,15 +1329,15 @@
     },
     {
       "id": "v1-222",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| `packages/ui/src/context/dialog.tsx` (again) | The `Kobalte.Overlay` lost its `onClick`, so a backdrop click no longer closes the top dialog. Escape (the window `keydown` listener) and `onOpenChange` (the close button) are untouched, as is the `persistent` guard on both. | A stray click in the dimmed area around a dialog dismissed it and discarded whatever it held — a half-filled sandbox form, a provider mid-connect. Dismissal is now always deliberate: the corner close button or Escape. | Keep the overlay handler-less. If upstream adds behaviour to the overlay, take it minus the close. Pairs with the `onInteractOutside` guards on the three dialog contents below — removing the handler alone is not enough, Kobalte's own dismissable layer closes on outside pointerdown too. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Sandbox/Work integration is tracked in CODEV-MIGRATION.md (preview stub only)"
     },
     {
       "id": "v1-223",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| Dialogs close on a button, never on an outside click: `packages/ui/src/components/dialog.tsx`, `packages/ui/src/components/dialog.css`, `packages/ui/src/v2/components/dialog-v2.tsx`, `packages/ui/src/v2/components/dialog-v2.css`, `packages/ui/src/components/image-preview.tsx`, plus the `*.stories.tsx` beside the two dialogs | All three `Kobalte.Content`s take `onInteractOutside={(e) => e.preventDefault()}`, which is what actually blocks Kobalte's dismissable layer (the context row above only removes the explicit overlay click). Both `Dialog`s gained `closeLabel?`/`hideClose?` and now render the `Kobalte.CloseButton` themselves, as the last child of their content, absolutely positioned at the content's top-right — v1 at 16px/20px (12px/12px when `data-no-header`), v2 at 14px/14px, both at `z-index: 30` so they clear the settings tab header's sticky `z-index: 10`. The button was removed from v2's `DialogHeader` (which loses its `hideClose`/`closeLabel` props and its `data-hide-close` attribute) and from v1's header `Switch`, whose `action` branch used to *replace* it; `action` now simply renders. Headers reserve the corner in `padding-right` (v1 52px, v2 42px) and v1's title takes `flex: 1`; both containers take a `min-height` (v1 52px, v2 48px) so a short `fit` dialog cannot clip the button. `aria-label` defaults to `ui.common.close` through `useI18n` — the first v2 component to use the UI i18n context, which has an English fallback. | Every dialog needed a visible way out once the backdrop stopped being one, including the dozen whose call sites passed `hideClose`. Pinning the button to the content corner rather than laying it out in the header is what lets header-less dialogs (settings, release notes, the command palettes) have one at all; keeping it inside `Kobalte.Content` keeps it inside the focus trap and the modal's pointer-events layer. | Keep the corner button and the `onInteractOutside` guards. Upstream owns the header/body/footer layout — take its changes and re-apply the `padding-right` reserve and the close button on top. If upstream adds its own close button to `DialogHeader`, drop ours from `Dialog` rather than shipping two. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Fork-only i18n (vi locale) must be re-applied to v2 locales"
     },
     {
       "id": "v1-224",
@@ -1353,21 +1353,21 @@
     },
     {
       "id": "v1-226",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| `packages/core/src/filesystem/search.ts`, `packages/app/e2e/utils/mock-server.ts` | `fffLayer`'s `find` drops the worktree-root entry: fff ranks the root itself into an empty-query result, where it leads every list as a bare `/` — a mention naming no file — while the ripgrep fallback never emits it. The e2e mock server gains an `agents` config field (defaulting to the previous single primary agent) so a spec can supply subagents; the `@` menu hides primary agents, so the default list left nothing to rank files against. | Empty-query `@` menus (see the `@` autocomplete rows) made the root visible for the first time, at the top of the list. Both search layers should answer the same way. | Keep the root filter and the `agents` default; take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-227",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| Sidebar scoping: `packages/app/src/pages/home-model.tsx`, `packages/app/e2e/utils/mock-server.ts` | `projectDirectories` returns `[]` when no project is selected instead of the union of every project's directories, so Pinned and Recents list one project's sessions or none; and a `homeSelectionSeed` helper plus a once-per-model effect opens a window with no stored selection on the server's last project (`projects.last()`), but only while that server still lists it. The seeding is guarded so a deliberate deselection — clicking the selected project — keeps showing nothing. The e2e mock server gains a `projects` config field (defaulting to `[config.project]`) for specs that need more than one. | A fresh window has a selection with a server but no directory, so the union listed every project on the server at once: sessions from folders you were not in, and — because a row is marked open when its session has a tab anywhere while tab strips are per-project — rows in two different projects looking active at the same time. | Keep the empty return and the seeding guard together: seeding without the empty return changes nothing, and the empty return without seeding opens every fresh window on a blank sidebar. Take upstream's surrounding changes. |",
       "evidence": "Needs manual review against v2"
     },
     {
       "id": "v1-228",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| Startup update prompt (terminal): `packages/opencode/src/cli/cmd/tui.ts`, `packages/opencode/src/cli/upgrade.ts`, `packages/tui/src/app.tsx` | `TuiInput` gains `onReady?: () => void`; `run` forwards it to `<App>`, which calls it once its `event.on(...)` handlers are registered. `cmd/tui.ts` drops the `setTimeout(..., 1000)` around `client.call(\"checkUpgrade\")` and passes that call as `onReady` instead. `upgrade()` replaces `const kind = getReleaseType(...)` / `if (config.autoupdate === \"notify\" || kind !== \"patch\")` with `const silent = config.autoupdate === true && getReleaseType(...) === \"patch\"` / `if (!silent)`, so a newer version notifies unless the user opted into automatic patch installs. `autoupdate: false` and `CODEV_DISABLE_AUTOUPDATE` still skip the check, and `CODEV_ALWAYS_NOTIFY_UPDATE` is untouched. | The startup check announced its result with the `installation.update-available` event, which the TUI has had a confirm dialog for all along — but nobody ever saw it. `Rpc.emit` is a bare `postMessage`, the TUI's handlers are registered while it renders, and the check on a one-second timer resolved a few hundred milliseconds before that: the event was delivered into an empty handler set and lost, every launch. Ordering the check behind the TUI instead of behind a timer is the only version of this that cannot race. The second change is about consent: upstream's default installs a patch release in place, unasked, which on this fork's fleet is a metered download and a version change nobody agreed to. | Keep `onReady` and the `onReady`-triggered `checkUpgrade`; take upstream's other changes to all three files. Do not restore the timer — it is the bug. If upstream moves the App's event handlers, keep the `props.onReady?.()` call after the last of them. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     },
     {
       "id": "v1-229",
@@ -1389,15 +1389,15 @@
     },
     {
       "id": "v1-232",
-      "status": "pending",
+      "status": "review",
       "sourceRow": "| Message order across the ID wrap: `packages/opencode/src/session/{message-v2,prompt}.ts` (+ tests) | Server side, `MessageV2` exports `chronological(a, b)` ((time.created, id) — upstream's private `isAfter` in `latest()` is the same order and is taken as-is), and the prompt loop's already-answered exit compares `MessageV2.chronological(lastUser, lastAssistant) < 0` instead of upstream's `lastAssistant.parentID === lastUser.id`. Client side the divergence is GONE: upstream v1.18.19 converged on (time.created, id) ordering (`utils/session-message.ts` `messageKey`/`compareMessages`, linear `findIndex` for ID-only lookups), so the fork's `utils/message-order.ts` was deleted and its call sites now use upstream's helpers. | Upstream's ID encoder keeps only 48 bits of `timestamp*4096`, so the time prefix wraps every 2^36 ms (last on 2026-08-14). Assistants persisted by the fork before `parentID` existed would fail upstream's equality check and read as unanswered — the prompt loop would re-run a turn on old sessions — so the chronological comparison stays. | Keep the `chronological` export and the prompt-loop comparison; take upstream's surrounding changes. If upstream's `parentID` is ever backfilled into stored fork data, their equality check can replace this. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Needs manual review against v2 (v1 session code is gone; re-verify behavior against the v2 session core)"
     },
     {
       "id": "v1-233",
-      "status": "pending",
+      "status": "port",
       "sourceRow": "| Composer git branch indicator: `packages/app/src/components/prompt-input-v2.tsx`, `packages/app/src/components/prompt-workspace-selector.tsx` | The composer's `modelControl` fragment (see the prompt-permission-mode row) gains a third element after the model select: the fork-only `PromptInputV2BranchIndicator`, which feeds `sync().data.vcs?.branch` into the new-session `PromptGitStatus` chip, wrapped in `text-v2-text-text-muted` so it matches the ghost-muted control buttons beside it, and gated on a session id in the route so the new-session views (which already show the branch beside the project selector) don't render it twice. `PromptGitStatus` gains a `separator?: boolean` prop (default `true`) so the footer usage drops the leading \"/\" divider that the new-session row needs. | Existing sessions never showed which branch the session's directory is on. The new-session chip already renders it for both Code and Work servers — per-server sync supplies the guest branch on Work — so it is reused rather than duplicated. | Keep the `separator` prop and the indicator; take upstream's surrounding prompt-input and workspace-selector changes. If upstream adds its own branch/status chip to the composer footer, prefer theirs and drop ours. |",
-      "evidence": "Needs manual review against v2"
+      "evidence": "Permission mode/consent needs a v2 TUI/session adapter"
     }
   ]
 }

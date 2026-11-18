@@ -1,0 +1,5 @@
+# Guest-image sources are COPY'd into Linux images verbatim, so a CRLF
+# checkout (Windows default) ships \r into the guest: bash rejects
+# `set -o pipefail\r` at image build and codev-init would break as vz PID 1.
+image/** text eol=lf
+script/*.ts text eol=lf
