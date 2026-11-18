@@ -46,6 +46,19 @@ const PermissionParams = {
   ),
 }
 
+const SkillInstallParams = {
+  dir: Flag.String("dir").pipe(Flag.withDescription("Install into this directory instead of an agent's"), Flag.optional),
+  global: Flag.Boolean("global").pipe(
+    Flag.withDescription("Install into the user-level skills directories instead of the project's"),
+    Flag.withDefault(false),
+  ),
+  agent: Flag.String("agent").pipe(
+    Flag.withDescription("Comma-separated agents to install for: claude, codex, opencode, codev"),
+    Flag.optional,
+  ),
+  json: Flag.Boolean("json").pipe(Flag.withDescription("Output JSON"), Flag.withDefault(false)),
+}
+
 const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME : "codev2", {
   description: "CoDev Code 2 command line interface",
   params: {
@@ -80,6 +93,146 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
           Flag.withAlias("m"),
           Flag.withDescription("Installation method to use"),
           Flag.optional,
+        ),
+      },
+    }),
+    Spec.make("configure", {
+      description: "Configure the CoDev AI gateway (SSO or API key)",
+      params: { ...ServerParams, ...PermissionParams },
+    }),
+    Spec.make("skill", {
+      description: "Search, install, and publish CoDev SkillHub skills and stacks",
+      commands: [
+        Spec.make("search", {
+          description: "Search SkillHub for skills",
+          params: {
+            query: Argument.String("query").pipe(Argument.withDescription("Search text")),
+            limit: Flag.Int("limit").pipe(
+              Flag.withSchema(Schema.Int.check(Schema.isGreaterThanOrEqualTo(1))),
+              Flag.withDescription("Maximum number of results"),
+              Flag.optional,
+            ),
+            json: Flag.Boolean("json").pipe(Flag.withDescription("Output JSON"), Flag.withDefault(false)),
+          },
+        }),
+        Spec.make("pull", {
+          description: "Install a skill from SkillHub",
+          params: {
+            target: Argument.String("target").pipe(Argument.withDescription("Skill slug or SkillHub URL")),
+            ...SkillInstallParams,
+            force: Flag.Boolean("force").pipe(
+              Flag.withDescription("Overwrite an existing skill"),
+              Flag.withDefault(false),
+            ),
+          },
+        }),
+        Spec.make("push", {
+          description: "Publish a skill directory to SkillHub",
+          params: {
+            path: Argument.String("path").pipe(Argument.withDescription("Skill directory to publish")),
+            draft: Flag.Boolean("draft").pipe(
+              Flag.withDescription("Upload as a draft without submitting for review"),
+              Flag.withDefault(false),
+            ),
+            yes: Flag.Boolean("yes").pipe(
+              Flag.withAlias("y"),
+              Flag.withDescription("Auto-approve the publish prompt"),
+              Flag.withDefault(false),
+            ),
+            json: Flag.Boolean("json").pipe(Flag.withDescription("Output JSON"), Flag.withDefault(false)),
+          },
+        }),
+        Spec.make("stack", {
+          description: "List and install SkillHub stacks",
+          commands: [
+            Spec.make("list", {
+              description: "List SkillHub stacks",
+              params: {
+                query: Argument.String("query").pipe(Argument.withDescription("Search text"), Argument.optional),
+                limit: Flag.Int("limit").pipe(
+                  Flag.withSchema(Schema.Int.check(Schema.isGreaterThanOrEqualTo(1))),
+                  Flag.withDescription("Maximum number of results"),
+                  Flag.optional,
+                ),
+                json: Flag.Boolean("json").pipe(Flag.withDescription("Output JSON"), Flag.withDefault(false)),
+              },
+            }),
+            Spec.make("pull", {
+              description: "Install every skill in a stack",
+              params: {
+                slug: Argument.String("slug").pipe(Argument.withDescription("Stack slug")),
+                ...SkillInstallParams,
+                mode: Flag.Literals("mode", ["skip-existing", "overwrite"]).pipe(
+                  Flag.withDescription("What to do with skills that already exist"),
+                  Flag.withDefault("skip-existing"),
+                ),
+              },
+            }),
+          ],
+        }),
+        Spec.make("office", {
+          description: "Install the CoDev Office skills bundle",
+          params: {
+            platform: Flag.Literals("platform", ["ubuntu", "macos", "windows"]).pipe(
+              Flag.withDescription("Target platform (defaults to this machine)"),
+              Flag.optional,
+            ),
+            arch: Flag.Literals("arch", ["arm64", "x86_64"]).pipe(
+              Flag.withDescription("macOS chip of the bundle to fetch"),
+              Flag.optional,
+            ),
+            dir: Flag.String("dir").pipe(Flag.withDescription("Directory to download the bundle into"), Flag.optional),
+            targetUser: Flag.String("target-user").pipe(
+              Flag.withDescription("Windows account that will use the skills"),
+              Flag.optional,
+            ),
+            downloadOnly: Flag.Boolean("download-only").pipe(
+              Flag.withDescription("Download the bundle without running its installer"),
+              Flag.withDefault(false),
+            ),
+            skipVerify: Flag.Boolean("skip-verify").pipe(
+              Flag.withDescription("Skip bundle checksum verification"),
+              Flag.withDefault(false),
+            ),
+            forceSkills: Flag.Boolean("force-skills").pipe(
+              Flag.withDescription("Overwrite existing skills"),
+              Flag.withDefault(false),
+            ),
+            uninstall: Flag.Boolean("uninstall").pipe(Flag.withDefault(false), Flag.withHidden),
+            yes: Flag.Boolean("yes").pipe(Flag.withDefault(false), Flag.withHidden),
+            skillsOnly: Flag.Boolean("skills-only").pipe(Flag.withDefault(false), Flag.withHidden),
+            purgeDownloads: Flag.Boolean("purge-downloads").pipe(Flag.withDefault(false), Flag.withHidden),
+          },
+        }),
+      ],
+    }),
+    Spec.make("upload", {
+      description: "Upload sessions to the CoDev analysis backend",
+      params: {
+        force: Flag.Boolean("force").pipe(
+          Flag.withDescription("Re-upload logs even when unchanged"),
+          Flag.withDefault(false),
+        ),
+        logs: Flag.Boolean("logs").pipe(
+          Flag.withDescription("Show the diagnostic log of the last upload run"),
+          Flag.withDefault(false),
+        ),
+        json: Flag.Boolean("json").pipe(Flag.withDescription("Output JSON"), Flag.withDefault(false)),
+      },
+    }),
+    Spec.make("codegraph", {
+      description: "Show how to enable the CodeGraph MCP server",
+    }),
+    Spec.make("migrate-v1", {
+      description: "Import Codev v1 data into Codev2 (opt-in; v1 data is never modified)",
+      params: {
+        source: Flag.String("source").pipe(
+          Flag.withDescription("Codev v1 root containing data/ and config/ (defaults to the standard v1 locations)"),
+          Flag.optional,
+        ),
+        dryRun: Flag.Boolean("dry-run").pipe(
+          Flag.withDescription("Print the import plan without copying anything"),
+          Flag.withDefault(false),
         ),
       },
     }),
@@ -138,6 +291,7 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
             ),
           },
         }),
+        Spec.make("stats", { description: "Run the CoDev session statistics push once" }),
         Spec.make("paths", {
           description: "Show global paths (data, config, cache, state)",
           params: {

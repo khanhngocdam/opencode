@@ -11,12 +11,12 @@ Experimental command: `codev2`; v1 remains installed independently.
 | Fork governance | Implemented, verification pending | Missing divergence fails CI; upstream history retained |
 | Brand and isolated CLI/service | Implemented, verification pending | Run alongside v1 without shared state or ports |
 | Desktop identity and update isolation | Implemented, verification pending | Installer/deep links/updater never target v1 or upstream |
-| Gateway/SSO | Pending | Configure, login, models and expired-key recovery on v2 |
-| SkillHub/Stack/Office/CodeGraph | Pending | Install/use/update against existing services |
-| Upload/statistics | Pending | v2 adapter, backend payload compatibility, opt-out and deduplication |
+| Gateway/SSO | In progress (package ported, `configure` wired; TUI does not yet read `CODEV_CONFIGURE`) | Configure, login, models and expired-key recovery on v2 |
+| SkillHub/Stack/Office/CodeGraph | In progress (package ported, `skill` commands wired, `codegraph` prints MCP setup only) | Install/use/update against existing services |
+| Upload/statistics | In progress (package ported, `upload` and `debug stats` wired; v1 DB reader still needs the v2 adapter) | v2 adapter, backend payload compatibility, opt-out and deduplication |
 | Sandbox and Code/Work | Preview stub only | Guest v2 server, mounts, broker, lifecycle and permission checks. `@codev/sandbox` exports `sandboxPreviewAvailability()` (always unsupported; `codev_sandbox` flag reports "guest v2 server image pending"); no VM, IPC or desktop wiring yet |
 | Remaining v1 divergences | In progress | Every source inventory row classified with evidence |
-| Migration | Pending | Snapshot import, warnings and idempotence; source untouched |
+| Migration | In progress (`migrate-v1` stages a config and database snapshot; session import not run) | Snapshot import, warnings and idempotence; source untouched |
 | VS Code and release artifacts | VS Code preview packaging script; release artifacts pending | Isolated VSIX/CLI/desktop artifacts, no automatic publication |
 
 ## Phase 1 coverage (brand + isolation)

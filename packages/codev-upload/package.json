@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/package",
+  "name": "@codev/upload",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@codev/gateway": "workspace:*",
+    "jsonc-parser": "3.3.1"
+  },
+  "devDependencies": {
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./nudge": "./src/nudge.ts",
+    "./spawn": "./src/spawn.ts"
+  },
+  "imports": {
+    "#sqlite": {
+      "bun": "./src/sqlite.bun.ts",
+      "node": "./src/sqlite.node.ts",
+      "default": "./src/sqlite.node.ts"
+    }
+  }
+}

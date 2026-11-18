@@ -20,6 +20,11 @@ export const registry = {
     "Enable experimental MCP Events, a draft MCP extension: declare support to MCP servers and read the events of servers that offer them.",
   full_codemode:
     "Enable the full Code Mode work in progress. Off by default in every build, including local and dev; opt in with OPENCODE_FLAGS=full_codemode or experimental.full_codemode: true.",
+  codev_gateway: "Enable CoDev gateway/SSO configure flows and AI gateway provider wiring.",
+  codev_skillhub: "Enable CoDev SkillHub, Stack, Office, and CodeGraph CLI/UI integration.",
+  codev_upload: "Enable CoDev session statistics upload and on-demand log export.",
+  codev_sandbox: "Enable CoDev Work sandbox lifecycle and desktop Code/Work split.",
+  codev_migrate_v1: "Enable the opt-in Codev v1 → Codev2 data import command.",
 } as const satisfies Record<string, string>
 export type Key = keyof typeof registry
 

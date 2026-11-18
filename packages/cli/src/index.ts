@@ -45,6 +45,20 @@ const Handlers = Runtime.handlers(Commands, {
   $: () => import("./commands/handlers/default"),
   upgrade: () => import("./commands/handlers/upgrade"),
   uninstall: () => import("./commands/handlers/uninstall"),
+  configure: () => import("./commands/handlers/configure"),
+  skill: {
+    search: () => import("./commands/handlers/skill/search"),
+    pull: () => import("./commands/handlers/skill/pull"),
+    push: () => import("./commands/handlers/skill/push"),
+    stack: {
+      list: () => import("./commands/handlers/skill/stack-list"),
+      pull: () => import("./commands/handlers/skill/stack-pull"),
+    },
+    office: () => import("./commands/handlers/skill/office"),
+  },
+  upload: () => import("./commands/handlers/upload"),
+  codegraph: () => import("./commands/handlers/codegraph"),
+  "migrate-v1": () => import("./commands/handlers/migrate-v1"),
   acp: () => import("./commands/handlers/acp"),
   api: () => import("./commands/handlers/api"),
   auth: {
@@ -59,6 +73,7 @@ const Handlers = Runtime.handlers(Commands, {
     agents: () => import("./commands/handlers/debug/agents"),
     config: () => import("./commands/handlers/debug/config"),
     "heap-dump": () => import("./commands/handlers/debug/heap-dump"),
+    stats: () => import("./commands/handlers/debug/stats"),
     paths: () => import("./commands/handlers/debug/paths"),
   },
   mcp: {
