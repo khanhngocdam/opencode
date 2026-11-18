@@ -3,7 +3,7 @@ import { constants, setPriority } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { prepareDevElectron } from "./dev-electron"
-import { downloadCliToResources, windowsify } from "./utils"
+import { windowsify } from "./utils"
 
 type ServerSource = { type: "build" } | { type: "download"; version: string }
 
@@ -51,7 +51,7 @@ function selectOptions(): DevOptions {
 
 async function prepareServer(source: ServerSource) {
   if (source.type === "download")
-    return downloadCliToResources(source.version, windowsify("resources/opencode-cli-dev"))
+    throw new Error("Codev2 preview requires --build-server; upstream server downloads are not supported")
   buildWebUi()
   process.env.OPENCODE_DESKTOP_CLI_DEV = join(import.meta.dirname, "../../cli")
 

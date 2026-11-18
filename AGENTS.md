@@ -1,3 +1,10 @@
+## Codev2 fork policy
+
+- Before editing, read `DIVERGENCES.md`. Every deliberate edit or deletion of an upstream file needs its own row (file, change, why, conflict strategy) in the same PR. Record new fork-only modules in its module inventory.
+- Prefer config/plugins/skills/agents, then additive `packages/codev-*`, then minimal upstream edits. Follow the v2 sync procedure in `DIVERGENCES.md`; do not copy v1's truncated-history patch procedure.
+- The experimental installation is `codev2`. Keep its data, service registration, credentials, desktop identity and updates separate from Codev v1 and OpenCode. Never migrate live v1 data in place.
+- Track migration completion honestly in `CODEV-MIGRATION.md`; copying a module is not completing its integration. Keep upstream attribution and license notices.
+
 - After changing the public Protocol or Server `HttpApi`, run `bun run generate` from `packages/client`. Do not edit generated client files directly.
 - Keep runtime dependencies directed from Schema to Core and Protocol, then from Core and Protocol to Server. Client runtime code may depend on Schema and Protocol but never Core or Server; `sdk` composes Client, Core, and Server.
 - This repository does not use Changesets. Do not add `.changeset` files; follow the existing release workflow instead.
@@ -5,9 +12,9 @@
 
 ## Live TUI Testing
 
-- Run `bun run dev:live` from a development worktree to test its TUI against the currently elected `opencode` background server and live sessions.
+- Run `bun run dev:live` from a development worktree to test its TUI against the currently elected `codev2` background server and live sessions.
 - Pass a directory after the script when needed, for example `bun run dev:live /path/to/project`.
-- The script discovers the server with `opencode service status`, injects its private local credential from `opencode service get password`, and uses the `dev` TUI storage channel so tabs and other client-local state match the installed client.
+- The script discovers the server with the source CLI (`bun run --silent dev service status`), injects its private local credential from `bun run --silent dev service get password`, and uses the `dev` TUI storage channel so tabs and other client-local state match the installed client.
 - Prefer `dev:live` over plain `bun run dev` for this workflow. An implicit managed-service connection may replace the live server when the worktree client version differs; explicit `--server` warns and continues without replacing it.
 
 ## Live Desktop Diagnostics

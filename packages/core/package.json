@@ -99,6 +99,7 @@
     "fast-check": "catalog:"
   },
   "dependencies": {
+    "@codev/brand": "workspace:*",
     "@ai-sdk/provider": "3.0.19",
     "@effect/platform-node": "catalog:",
     "@effect/platform-node-shared": "catalog:",

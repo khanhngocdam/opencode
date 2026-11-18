@@ -1,5 +1,7 @@
 export * as SessionSystemPrompt from "./system-prompt.js"
 
+import { rebrand } from "@codev/brand"
+
 import PROMPT from "./runner/prompt/system.txt"
 
 export function make(tools: string[]) {
@@ -24,5 +26,5 @@ export function render(prompt: string, tools: string[]) {
       "- Use the edit tool for targeted changes to existing text files. It replaces the exact text in `oldString` with `newString`, and the values must differ. By default, `oldString` must occur exactly once. If it occurs multiple times, include more surrounding context to make it unique or set `replaceAll` to true to replace every occurrence.",
     )
   }
-  return prompt.replace("${OPENCODE_TOOL_GUIDANCE}", instructions.join("\n"))
+  return rebrand(prompt.replace("${OPENCODE_TOOL_GUIDANCE}", instructions.join("\n")))
 }

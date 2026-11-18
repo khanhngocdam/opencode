@@ -9,13 +9,6 @@ import { CLI_BINARIES, getCurrentCli, nodePtyPackage } from "./script/utils"
 
 const packageDir = path.dirname(fileURLToPath(import.meta.url))
 
-// The Electron 42 packaging update briefly installed Linux launchers/icons under
-// "opencode-desktop". Keep that hidden desktop entry around so existing GNOME/KDE
-// pins still resolve after the canonical app id changes back to ai.opencode.desktop.
-const legacyDesktopEntry = path.join(packageDir, "resources", "linux", "opencode-desktop.desktop")
-
-const legacyDesktopEntryFpm = `${legacyDesktopEntry}=/usr/share/applications/opencode-desktop.desktop`
-
 // rpmbuild adds /usr/lib/.build-id links for every ELF file. The bundled Electron
 // binaries are byte-identical across apps on the same Electron version, so those
 // links collide with other Electron RPMs (Slack, Unity Hub, ...) and rpm/zypper
@@ -41,14 +34,14 @@ function resolveChannel() {
 }
 
 const APP_IDS = {
-  dev: "ai.opencode.desktop.dev",
-  beta: "ai.opencode.desktop.beta",
-  prod: "ai.opencode.desktop",
+  dev: "ai.codev2.desktop.dev",
+  beta: "ai.codev2.desktop.beta",
+  prod: "ai.codev2.desktop",
 } as const
 
 // libappimage (used by AppImageLauncher) resolves the .desktop entry inside an
 // AppImage by globbing `*.desktop` at the squashfs root. If the main
-// executable itself ends in `.desktop` (prod appId `ai.opencode.desktop`), the
+// executable itself ends in `.desktop` (prod appId `ai.codev2.desktop`), the
 // ELF binary matches the glob and is parsed as a desktop entry, so
 // integration fails with `Malformed desktop entry: Unexpected char '\x7f' at 0`
 // (0x7F is the first byte of the ELF magic).
@@ -64,20 +57,20 @@ const getBase = (appId: string): Configuration => {
   const desktopName = `${appId}.desktop`
 
   return {
-    artifactName: "opencode-desktop-${os}-${arch}.${ext}",
+    artifactName: "codev2-desktop-${os}-${arch}.${ext}",
     directories: {
       output: "dist",
       buildResources: "resources",
     },
     // Linux launchers are .desktop files, so this is the desktop file name,
-    // not just the app id. For prod, app id "ai.opencode.desktop" becomes
-    // "ai.opencode.desktop.desktop".
+    // not just the app id. For prod, app id "ai.codev2.desktop" becomes
+    // "ai.codev2.desktop.desktop".
     // https://developer.gnome.org/documentation/guidelines/maintainer/integrating.html
     // https://www.electron.build/docs/linux/
     // Release builds take their version from OPENCODE_VERSION instead of rewriting package.json.
     extraMetadata: process.env.OPENCODE_VERSION
-      ? { desktopName, version: process.env.OPENCODE_VERSION }
-      : { desktopName },
+      ? { name: "codev2-desktop", desktopName, version: process.env.OPENCODE_VERSION }
+      : { name: "codev2-desktop", desktopName },
     files: [
       "out/**/*",
       "resources/**/*",
@@ -173,8 +166,8 @@ const getBase = (appId: string): Configuration => {
       target: ["dmg", "zip"],
     },
     protocols: {
-      name: "OpenCode",
-      schemes: ["opencode"],
+      name: "CoDev Code 2",
+      schemes: ["codev2"],
     },
     win: {
       icon: `resources/icons/icon.ico`,
@@ -193,7 +186,7 @@ const getBase = (appId: string): Configuration => {
       category: "Development",
       executableName: linuxExecutableName(appId),
       // Derive the installed `.desktop` filename from `desktopName`
-      // (`ai.opencode.desktop.desktop` for prod) instead of `executableName`,
+      // (`ai.codev2.desktop.desktop` for prod) instead of `executableName`,
       // so window association is unaffected by the executable rename above.
       syncDesktopName: true,
       desktop: {
@@ -218,15 +211,11 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "OpenCode Dev",
-        publish: {
-          provider: "generic",
-          url: "https://opencode.ai/update/api/dev/desktop/opencode/",
-          channel: "latest",
-        },
+        productName: "CoDev Code 2 Dev",
+        publish: null,
         deb: { fpm: [...previewCompressionFpm("deb"), metainfoFpm(appId)] },
         rpm: {
-          packageName: "opencode-dev",
+          packageName: "codev2-dev",
           fpm: [rpmNoBuildIdLinksFpm, ...previewCompressionFpm("rpm"), metainfoFpm(appId)],
         },
       }
@@ -236,16 +225,12 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "OpenCode Beta",
-        protocols: { name: "OpenCode Beta", schemes: ["opencode"] },
-        publish: {
-          provider: "generic",
-          url: "https://opencode.ai/update/api/beta/desktop/opencode/",
-          channel: "latest",
-        },
+        productName: "CoDev Code 2 Beta",
+        protocols: { name: "CoDev Code 2 Beta", schemes: ["codev2"] },
+        publish: null,
         deb: { fpm: [...previewCompressionFpm("deb"), metainfoFpm(appId)] },
         rpm: {
-          packageName: "opencode-beta",
+          packageName: "codev2-beta",
           fpm: [rpmNoBuildIdLinksFpm, ...previewCompressionFpm("rpm"), metainfoFpm(appId)],
         },
       }
@@ -255,20 +240,16 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "OpenCode",
-        protocols: { name: "OpenCode", schemes: ["opencode"] },
+        productName: "CoDev Code 2",
+        protocols: { name: "CoDev Code 2", schemes: ["codev2"] },
         // An Icon Composer package compiles to Assets.car, which macOS 26 and later draw the app icon from
         // (Dock, Finder, system dialogs and the system icon styles). Older macOS keeps using the ICNS.
         mac: { ...base.mac, icon: "resources/icons/icon.icon" },
         // The DMG volume icon would otherwise use the same actool-generated ICNS.
         dmg: { icon: "resources/icons/icon.icns" },
-        publish: {
-          provider: "generic",
-          url: "https://opencode.ai/update/api/latest/desktop/opencode/",
-          channel: "latest",
-        },
-        deb: { fpm: [metainfoFpm(appId), legacyDesktopEntryFpm] },
-        rpm: { packageName: "opencode", fpm: [rpmNoBuildIdLinksFpm, metainfoFpm(appId), legacyDesktopEntryFpm] },
+        publish: null,
+        deb: { fpm: [metainfoFpm(appId)] },
+        rpm: { packageName: "codev2", fpm: [rpmNoBuildIdLinksFpm, metainfoFpm(appId)] },
       }
     }
   }

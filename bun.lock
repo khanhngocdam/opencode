@@ -108,8 +108,7 @@
       "name": "@opencode/cli",
       "version": "2.3.0",
       "bin": {
-        "opencode": "./bin/opencode.cjs",
-        "opencode2": "./bin/opencode2.cjs",
+        "codev2": "./bin/codev2.cjs",
       },
       "dependencies": {
         "@agentclientprotocol/sdk": "1.6.0",
@@ -208,11 +207,21 @@
         "@typescript/native": "catalog:",
       },
     },
+    "packages/codev-brand": {
+      "name": "@codev/brand",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@tsconfig/bun": "catalog:",
+        "@types/bun": "catalog:",
+        "@typescript/native": "catalog:",
+      },
+    },
     "packages/core": {
       "name": "@opencode/core",
       "version": "2.3.0",
       "dependencies": {
         "@ai-sdk/provider": "3.0.19",
+        "@codev/brand": "workspace:*",
         "@effect/platform-node": "catalog:",
         "@effect/platform-node-shared": "catalog:",
         "@effect/sql-sqlite-bun": "catalog:",
@@ -1412,6 +1421,8 @@
     "@cloudflare/workerd-windows-64": ["@cloudflare/workerd-windows-64@1.20260708.1", "", { "os": "win32", "cpu": "x64" }, "sha512-bC/aSAwLy16Vjo24i9XU3aWH+eRgz7NeR5xPKavGbembO18ZywYTQbXh14eXtY6fAqN3RzRG8psijTdhX4xydA=="],
 
     "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20251008.0", "", {}, "sha512-dZLkO4PbCL0qcCSKzuW7KE4GYe49lI12LCfQ5y9XeSwgYBoAUbwH4gmJ6A0qUIURiTJTkGkRkhVPqpq2XNgYRA=="],
+
+    "@codev/brand": ["@codev/brand@workspace:packages/codev-brand"],
 
     "@corvu/dialog": ["@corvu/dialog@0.2.4", "", { "dependencies": { "@corvu/utils": "~0.4.2", "solid-dismissible": "~0.1.1", "solid-focus-trap": "~0.1.8", "solid-presence": "~0.2.0", "solid-prevent-scroll": "~0.1.10" }, "peerDependencies": { "solid-js": "^1.8" } }, "sha512-n54vJq+fOy8GVrnYBdJpD6JXNuyx7LOeMrRxwzAvZnYGpW8+AA12tnb/P/2emJj/HjOO5otheGKb0breshdFlA=="],
 

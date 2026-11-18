@@ -1,11 +1,10 @@
 export * as DesktopCli from "./desktop-cli"
 
-import { execFile, spawn } from "node:child_process"
+import { execFile } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import { promisify } from "node:util"
 import { app } from "electron"
 import { Context, Effect, FileSystem, Layer, Option, Path, Schema } from "effect"
-import installer from "../../../../../install?raw"
 import { DesktopPaths } from "../paths"
 import { BUNDLED_CLI_VERSION_KEY } from "../storage/keys"
 import { getStore } from "../storage/store"
@@ -33,23 +32,14 @@ export class Service extends Context.Service<Service, Interface>()("opencode/des
 export const layer = Layer.effect(
   Service,
   Effect.gen(function* () {
-    const path = yield* Path.Path
-
     // A failed lookup (for example a stage copy that antivirus held open) runs again on the next use.
     const resolve = yield* DesktopCliState.make(
       make().pipe(Effect.provide(yield* Effect.context<FileSystem.FileSystem | Path.Path>()), Effect.orDie),
     )
 
-    const install = Effect.gen(function* () {
-      if (process.platform !== "darwin") return yield* Effect.fail(new Error("CLI installation requires macOS"))
-      const cli = yield* resolve
-
-      if (!cli.binary) return yield* Effect.fail(new Error("Bundled CLI executable is unavailable"))
-      const home = app.getPath("home")
-      yield* runInstaller(cli.binary, home)
-
-      return path.join(home, ".opencode", "bin", "opencode")
-    })
+    const install = Effect.fail(
+      new Error("Codev2 preview CLI installation is manual; the upstream installer is not used."),
+    )
 
     return Service.of({ resolve, install })
   }),
@@ -191,39 +181,6 @@ const run = Effect.fn("DesktopCli.run")(function* (binary: string, args: string[
   yield* Effect.logInfo("v2 CLI command completed", { args, stdout, stderr })
 
   return stdout
-})
-
-// The installer runs `opencode --version`, which can take several seconds on first run while Gatekeeper scans it.
-const INSTALL_TIMEOUT_MS = 60_000
-
-const runInstaller = Effect.fn("DesktopCli.installForUser")(function* (binary: string, home: string) {
-  yield* Effect.callback<void, Error>((resume) => {
-    const child = spawn("/bin/bash", ["-s", "--", "--binary", binary], {
-      env: { ...process.env, HOME: home },
-      stdio: ["pipe", "ignore", "pipe"],
-    })
-
-    let stderr = ""
-    child.stderr.on("data", (chunk) => (stderr += chunk))
-    child.on("error", (error) => resume(Effect.fail(error)))
-    child.on("close", (code) => {
-      if (code === 0) return resume(Effect.void)
-      resume(Effect.fail(new Error(stderr.trim() || `CLI installer exited with code ${code}`)))
-    })
-    // bash can exit before it read the whole script; its `close` reports the failure.
-    child.stdin.on("error", () => {})
-    child.stdin.end(installer)
-
-    // A timeout or the app quitting leaves no installer writing into ~/.opencode behind.
-    return Effect.sync(() => {
-      if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL")
-    })
-  }).pipe(
-    Effect.timeoutOrElse({
-      duration: INSTALL_TIMEOUT_MS,
-      orElse: () => Effect.fail(new Error("CLI installation timed out")),
-    }),
-  )
 })
 
 function executableName() {

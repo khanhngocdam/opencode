@@ -1,0 +1,19 @@
+{
+  "name": "@codev/brand",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bun check --no-script",
+    "typecheck:tsc": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@tsconfig/bun": "catalog:",
+    "@typescript/native": "catalog:"
+  }
+}

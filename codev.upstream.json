@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/anomalyco/opencode.git",
+  "branch": "dev",
+  "commit": "db1d7b9120fb899dc1d471a93e8bfad1e6dfbd98",
+  "version": "2.3.0",
+  "source": {
+    "repository": "https://github.com/khanhngocdam/codev-code.git",
+    "commit": "63f2166",
+    "version": "1.18.23-9"
+  }
+}
