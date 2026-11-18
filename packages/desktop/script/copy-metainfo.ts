@@ -6,7 +6,7 @@ const channel = arg === "dev" || arg === "beta" || arg === "prod" ? arg : resolv
 
 const appId = channel === "prod" ? "ai.codev2.desktop" : `ai.codev2.desktop.${channel}`
 
-const productName = channel === "prod" ? "CoDev Code 2" : `CoDev Code 2 ${channel.charAt(0).toUpperCase() + channel.slice(1)}`
+const productName = channel === "prod" ? "Codev Code 2.0" : `Codev Code 2.0 ${channel.charAt(0).toUpperCase() + channel.slice(1)}`
 
 const summary = `Open source AI coding agent${channel !== "prod" ? ` (${channel})` : ""}`
 
@@ -26,7 +26,7 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 
   <description>
     <p>
-      CoDev Code 2 is an OpenCode-based open source agent that helps you write and run code with any AI model.
+      Codev Code 2.0 is an OpenCode-based open source agent that helps you write and run code with any AI model.
     </p>
   </description>
 

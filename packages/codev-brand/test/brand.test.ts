@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { rebrand } from "../src/index"
 
 test("brands product prose and executable instructions without changing contracts", () => {
-  expect(rebrand("OpenCode: opencode run")).toBe("CoDev Code 2: codev2 run")
+  expect(rebrand("OpenCode: opencode run")).toBe("Codev Code 2.0: codev2 run")
   const contracts = "@opencode/plugin @opencode-ai/sdk opencode.json opencode.jsonc .opencode opencode.db https://opencode.ai/config.json opencode-gemini-auth"
   expect(rebrand(contracts)).toBe(contracts)
 })

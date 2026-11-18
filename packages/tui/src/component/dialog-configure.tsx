@@ -63,11 +63,11 @@ export function DialogConfigure(props: { expired?: boolean } = {}) {
 
   return (
     <DialogSelect
-      title="Configure CoDev Code"
+      title="Configure Codev Code 2.0"
       titleView={
         props.expired ? (
           <box>
-            <text fg={root.text.base}>Configure CoDev Code</text>
+            <text fg={root.text.base}>Configure Codev Code 2.0</text>
             <text fg={root.text.feedback.warning.base}>
               Your sign-in has expired. Log in with SSO again to continue.
             </text>
@@ -215,14 +215,14 @@ async function configureGateway(ctx: FlowContext, creds: { apiKey: string; baseU
   // A fresh sign-in un-stalls the background stats push; send any backlog now. Detached, gated inside.
   spawnStatsDaemon()
 
-  ctx.toast.show({ variant: "success", message: "CoDev Code configured. Choose a model." })
+  ctx.toast.show({ variant: "success", message: "Codev Code 2.0 configured. Choose a model." })
   ctx.dialog.replace(() => <DialogModel providerID={GATEWAY_PROVIDER.id} />)
 }
 
 function failSetup(ctx: FlowContext, message: string) {
   ctx.toast.show({
     variant: "error",
-    title: "CoDev Code setup failed",
+    title: "Codev Code 2.0 setup failed",
     message: `${message}. Run /configure to try again.`,
     duration: 10000,
   })
@@ -252,7 +252,7 @@ function ask(
 function StatusView(props: { status: Accessor<string> }) {
   const theme = useTheme().surface("dialog")
   return (
-    <DialogLayout header={<DialogHeader title="Configure CoDev Code" />}>
+    <DialogLayout header={<DialogHeader title="Configure Codev Code 2.0" />}>
       <Spinner color={theme.text.muted}>{props.status()}</Spinner>
     </DialogLayout>
   )

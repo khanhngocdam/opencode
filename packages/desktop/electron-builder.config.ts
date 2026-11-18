@@ -166,7 +166,7 @@ const getBase = (appId: string): Configuration => {
       target: ["dmg", "zip"],
     },
     protocols: {
-      name: "CoDev Code 2",
+      name: "Codev Code 2.0",
       schemes: ["codev2"],
     },
     win: {
@@ -211,7 +211,7 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "CoDev Code 2 Dev",
+        productName: "Codev Code 2.0 Dev",
         publish: null,
         deb: { fpm: [...previewCompressionFpm("deb"), metainfoFpm(appId)] },
         rpm: {
@@ -225,8 +225,8 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "CoDev Code 2 Beta",
-        protocols: { name: "CoDev Code 2 Beta", schemes: ["codev2"] },
+        productName: "Codev Code 2.0 Beta",
+        protocols: { name: "Codev Code 2.0 Beta", schemes: ["codev2"] },
         publish: null,
         deb: { fpm: [...previewCompressionFpm("deb"), metainfoFpm(appId)] },
         rpm: {
@@ -240,8 +240,8 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "CoDev Code 2",
-        protocols: { name: "CoDev Code 2", schemes: ["codev2"] },
+        productName: "Codev Code 2.0",
+        protocols: { name: "Codev Code 2.0", schemes: ["codev2"] },
         // An Icon Composer package compiles to Assets.car, which macOS 26 and later draw the app icon from
         // (Dock, Finder, system dialogs and the system icon styles). Older macOS keeps using the ICNS.
         mac: { ...base.mac, icon: "resources/icons/icon.icon" },

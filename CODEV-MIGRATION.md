@@ -48,7 +48,7 @@ These v1 inventory rows are classified as covered by the Codev2 identity work
 
 The upstream extension in `sdks/vscode` (`sst-dev.opencode`, `opencode.*` commands) is not renamed.
 `sdks/vscode/script/pack-codev2.ts` stages an isolated preview in `sdks/vscode/dist-codev2/`:
-extension `codev.codev2`, display name `CoDev Code 2`, commands `codev2.*`, terminal and binary `codev2`.
+extension `codev.codev2`, display name `Codev Code 2.0`, commands `codev2.*`, terminal and binary `codev2`.
 Nothing is published automatically.
 
 ```sh

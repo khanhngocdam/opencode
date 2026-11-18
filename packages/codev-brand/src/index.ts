@@ -1,5 +1,7 @@
-export const PRODUCT_NAME = "CoDev Code 2"
+export const PRODUCT_NAME = "Codev Code 2.0"
 export const COMMAND_NAME = "codev2"
+/** Unscoped npm package name for public CLI releases (like v1 `codev-code`). */
+export const PACKAGE_NAME = "codev2.0-code"
 // Base64 (like codev-gateway's const.ts) to keep the host out of casual greps,
 // not as a secret — the decoded URL ships in the system prompt the model reads.
 export const DOCS_URL = atob("aHR0cHM6Ly9uZXRtaW5kLnZpZXR0ZWwudm4vY29kZXYvZW4vZG9jcy9jb2Rl")

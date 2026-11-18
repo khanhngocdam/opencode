@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect"
 import { Updater } from "./updater"
 
-const message = "CoDev Code 2 preview updates are manual. Install a verified Codev2 artifact; upstream installers are not used."
+const message = "Codev Code 2.0 preview updates are manual. Install a verified Codev2 artifact; upstream installers are not used."
 
 // The upstream updater remains intact for future adaptation. The preview must
 // never detect, upgrade or remove an existing OpenCode installation.

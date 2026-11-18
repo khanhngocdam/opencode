@@ -86,7 +86,7 @@ not apply. Do not truncate history or merge unrelated histories.
 - `packages/codev-brand`: pure branding adapter and contract tests.
 - `packages/codev-sandbox`: v1 sandbox providers copied for later integration; only `src/preview.ts`
   (`sandboxPreviewAvailability`, always unsupported in the preview, never boots a VM) is exported for v2 UI use.
-- `sdks/vscode/script/pack-codev2.ts`: stages an isolated `CoDev Code 2` extension (`codev.codev2`, `codev2.*`
+- `sdks/vscode/script/pack-codev2.ts`: stages an isolated `Codev Code 2.0` extension (`codev.codev2`, `codev2.*`
   commands, `codev2` binary) in `sdks/vscode/dist-codev2/`; leaves the upstream extension untouched.
 - `packages/cli/src/services/codev-updater.ts`: preview update policy; no upstream installers.
 - `packages/cli/test/codev-updater.test.ts`: preview update isolation contract.

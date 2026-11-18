@@ -642,23 +642,23 @@ function App() {
     if (!terminalTitleEnabled()) return
 
     if (route.data.type === "home") {
-      setTerminalTitle(renderer, "OpenCode")
+      setTerminalTitle(renderer, "Codev Code 2.0")
       return
     }
 
     if (route.data.type === "session") {
       const title = session?.title
       if (!title || isFallbackTitle(title)) {
-        setTerminalTitle(renderer, "OpenCode")
+        setTerminalTitle(renderer, "Codev Code 2.0")
         return
       }
 
-      setTerminalTitle(renderer, `OC | ${title.length > 40 ? title.slice(0, 37) + "…" : title}`)
+      setTerminalTitle(renderer, `CC | ${title.length > 40 ? title.slice(0, 37) + "…" : title}`)
       return
     }
 
     if (route.data.type === "plugin") {
-      setTerminalTitle(renderer, `OC | ${route.data.name}`)
+      setTerminalTitle(renderer, `CC | ${route.data.name}`)
     }
   })
 
@@ -1051,7 +1051,7 @@ function App() {
       },
       {
         name: "codev.configure",
-        title: "Configure CoDev Code",
+        title: "Configure Codev Code 2.0",
         slash: { name: "configure" },
         run: () => dialog.replace(() => <DialogConfigure />),
         category: "Integration",

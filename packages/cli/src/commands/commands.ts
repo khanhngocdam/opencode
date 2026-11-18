@@ -60,12 +60,12 @@ const SkillInstallParams = {
 }
 
 const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME : "codev2", {
-  description: "CoDev Code 2 command line interface",
+  description: "Codev Code 2.0 command line interface",
   params: {
     ...ServerParams,
     ...PermissionParams,
     directory: Argument.String("directory").pipe(
-      Argument.withDescription("Directory to start CoDev Code 2 in"),
+      Argument.withDescription("Directory to start Codev Code 2.0 in"),
       Argument.optional,
     ),
     continue: Flag.Boolean("continue").pipe(
@@ -552,7 +552,7 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
       },
     }),
     Spec.make("run", {
-      description: "Run CoDev Code 2 with a message",
+      description: "Run Codev Code 2.0 with a message",
       globalFlags: ServerFlags,
       params: {
         message: Argument.String("message").pipe(

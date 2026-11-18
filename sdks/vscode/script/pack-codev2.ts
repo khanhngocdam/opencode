@@ -8,7 +8,7 @@ import path from "node:path"
 
 const root = path.resolve(import.meta.dir, "..")
 const out = path.join(root, "dist-codev2")
-const displayName = "CoDev Code 2"
+const displayName = "Codev Code 2.0"
 const binary = "codev2"
 
 await rm(out, { recursive: true, force: true })

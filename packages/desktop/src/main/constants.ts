@@ -9,9 +9,9 @@ export const CHANNEL: Channel = raw === "local" || raw === "dev" || raw === "bet
 export const VERSION = app.isPackaged ? app.getVersion() : (process.env.OPENCODE_VERSION ?? app.getVersion())
 
 const appNames: Record<string, string> = {
-  dev: "CoDev Code 2 Dev",
-  beta: "CoDev Code 2 Beta",
-  prod: "CoDev Code 2",
+  dev: "Codev Code 2.0 Dev",
+  beta: "Codev Code 2.0 Beta",
+  prod: "Codev Code 2.0",
 }
 
 const appIDs: Record<string, string> = {
@@ -21,6 +21,6 @@ const appIDs: Record<string, string> = {
 }
 
 // Local renderer/server mode keeps the dev application identity.
-export const APP_NAME = app.isPackaged ? appNames[CHANNEL] : "CoDev Code 2 Dev"
+export const APP_NAME = app.isPackaged ? appNames[CHANNEL] : "Codev Code 2.0 Dev"
 
 export const APP_ID = app.isPackaged ? appIDs[CHANNEL] : "ai.codev2.desktop.dev"

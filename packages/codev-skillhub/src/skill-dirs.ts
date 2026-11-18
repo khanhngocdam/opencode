@@ -36,7 +36,7 @@ export const AGENT_LABELS: Record<SkillAgent, string> = {
   claude: "Claude Code",
   codex: "Codex",
   opencode: "OpenCode",
-  codev: "CoDev Code",
+  codev: "Codev Code 2.0",
 }
 
 export type Scope = "current" | "global"
