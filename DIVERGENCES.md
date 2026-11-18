@@ -73,6 +73,8 @@ not apply. Do not truncate history or merge unrelated histories.
 | `packages/desktop/script/build.ts` | Require a locally built fork CLI for every desktop channel. | Prevent staging an upstream server in a Codev2 desktop. | Keep failure on missing CLI instead of restoring download fallback. |
 | `packages/tui/src/logo.ts` | Use the Codev wordmark geometry. | Rebrand the TUI without copying v1 theme implementation. | Keep semantic colors and responsive renderer from v2. |
 | `packages/tui/src/component/logo.tsx` | Show a compact Codev c badge. | Keep narrow terminal branding consistent. | Retain responsive breakpoints and semantic theme tokens. |
+| `packages/tui/src/app.tsx` | Open `DialogConfigure` on an idle home screen when `CODEV_CONFIGURE=1` (set by `codev2 configure`), before the highlights gate; add the `/configure` command. | Run the Codev gateway SSO/API-key setup inside the v2 TUI. | Keep upstream startup effects and commands; re-add the configure effect before the highlights effect and the command beside `provider.connect`. |
+| `packages/tui/package.json` | Depend on `@codev/gateway` and `@codev/upload`. | The configure dialog calls the gateway client and respawns the stats daemon. | Keep the additive workspace dependencies. |
 
 | `packages/desktop/src/main/service/desktop-cli.ts` | Disable the upstream macOS CLI installer. | Prevent overwriting the installed opencode command from Codev2. | Keep preview installation unavailable until a fork installer is tested. |
 | `packages/desktop/src/main/service/background-service.ts` | Discover the local-channel service under Codev2 state. | Match CLI registration and SDK discovery. | Keep all discovery roots aligned. |
@@ -92,6 +94,9 @@ not apply. Do not truncate history or merge unrelated histories.
 - `script/check-divergences.ts`: validates this registry against the pinned baseline.
 - `.github/workflows/check-codev.yml`: validates divergence coverage with full history.
 - `packages/codev-gateway`: gateway/SSO auth file, backend client, model limits and v2 provider config block (`providers`/`package`/`settings`/`capabilities`).
+- `packages/tui/src/component/dialog-configure.tsx` and `packages/tui/src/util/configure-gate.ts` (tests in
+  `packages/tui/test/configure-gate.test.ts`): Codev gateway configure dialog (SSO or API key; provider block merged
+  into the global config file, key stored as a v2 credential) and its startup gate/retry helpers.
 - `packages/codev-skillhub`: SkillHub search/install/publish, Stack and Office installers.
 - `packages/codev-upload`: session statistics push, log export and upload to the analysis backend.
 - `packages/cli/src/commands/handlers/{configure,upload,codegraph,migrate-v1}.ts`, `skill/*.ts` and `debug/stats.ts`: Codev command handlers.

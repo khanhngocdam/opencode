@@ -27,6 +27,7 @@ export {
 } from "./backend"
 export { cacheModelLimits, limitsFor, type ModelLimits } from "./model-limits"
 export { ensureGatewayKey, type EnsureKeyFns, type EnsureKeyOptions, type GatewayKeyCheck } from "./ensure-key"
+export { mergeConfigFragment } from "./config-file"
 export { buildCustomProviderConfig, buildGatewayConfig, normalizeGatewayBaseUrl } from "./config-block"
 export {
   CUSTOM_FALLBACK_PROVIDER,

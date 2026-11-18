@@ -71,6 +71,8 @@ import { DialogConfig } from "./component/dialog-config"
 import { DialogDebug } from "./component/dialog-debug"
 import { DialogPair } from "./component/dialog-pair"
 import { DialogHighlights } from "./component/dialog-highlights"
+import { DialogConfigure } from "./component/dialog-configure"
+import { shouldOpenConfigure } from "./util/configure-gate"
 import { claim } from "./util/highlights"
 import { DialogThemeList } from "./component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
@@ -724,6 +726,24 @@ function App() {
       .catch(toast.error)
   })
 
+  // Codev: `codev2 configure` sets CODEV_CONFIGURE=1 so startup opens the gateway setup flow instead of the idle
+  // home screen. Declared before the highlights gate so the open dialog keeps highlights from stacking over it.
+  let configureOpened = false
+  createEffect(() => {
+    if (configureOpened || !plugins.ready() || client.connection.status() !== "connected") return
+    configureOpened = true
+    if (
+      !shouldOpenConfigure({
+        env: process.env.CODEV_CONFIGURE,
+        route: route.data.type,
+        dialogs: dialog.stack.length,
+        draft: promptRef.current?.current.text,
+      })
+    )
+      return
+    dialog.replace(() => <DialogConfigure />)
+  })
+
   // Opens the release highlights once after an update, but only into an idle home screen during startup.
   const storage = useStorage()
   const paths = useTuiPaths()
@@ -1027,6 +1047,13 @@ function App() {
             />
           ))
         },
+        category: "Integration",
+      },
+      {
+        name: "codev.configure",
+        title: "Configure CoDev Code",
+        slash: { name: "configure" },
+        run: () => dialog.replace(() => <DialogConfigure />),
         category: "Integration",
       },
       ...(app.highlights?.length

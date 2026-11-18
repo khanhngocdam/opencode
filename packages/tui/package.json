@@ -49,6 +49,8 @@
     }
   },
   "dependencies": {
+    "@codev/gateway": "workspace:*",
+    "@codev/upload": "workspace:*",
     "@opencode/client": "workspace:*",
     "@opencode/core": "workspace:*",
     "@opencode/latex": "workspace:*",

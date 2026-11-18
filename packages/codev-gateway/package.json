@@ -8,6 +8,9 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
+  "dependencies": {
+    "jsonc-parser": "3.3.1"
+  },
   "devDependencies": {
     "@types/bun": "catalog:"
   },

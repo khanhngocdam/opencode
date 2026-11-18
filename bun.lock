@@ -222,6 +222,9 @@
     "packages/codev-gateway": {
       "name": "@codev/gateway",
       "version": "0.0.1",
+      "dependencies": {
+        "jsonc-parser": "3.3.1",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
       },
@@ -815,6 +818,8 @@
       "name": "@opencode/tui",
       "version": "2.3.0",
       "dependencies": {
+        "@codev/gateway": "workspace:*",
+        "@codev/upload": "workspace:*",
         "@opencode/client": "workspace:*",
         "@opencode/core": "workspace:*",
         "@opencode/latex": "workspace:*",
