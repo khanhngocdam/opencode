@@ -38,7 +38,8 @@ not apply. Do not truncate history or merge unrelated histories.
 | File | Change | Why | On conflict |
 | --- | --- | --- | --- |
 | `AGENTS.md` | Add fork policy and Codev2 live-testing guidance. | Keep future work divergence-aware. | Keep fork policy; take newer architecture and testing rules. |
-| `package.json` | Add divergence verification. | Make the fork policy executable. | Preserve the check alongside upstream scripts. |
+| `package.json` | Add the divergence verification and `bump` scripts. | Make the fork policy executable; apply the Codev v1 revision rule (`2.3.0-N`) on v2. | Keep both script lines alongside upstream scripts. |
+| `packages/ai/package.json`, `packages/app/package.json`, `packages/client/package.json`, `packages/codemode/package.json`, `packages/data/app/package.json`, `packages/data/core/package.json`, `packages/data/server/package.json`, `packages/desktop/package.json`, `packages/gui-plugins/package.json`, `packages/http-recorder/package.json`, `packages/httpapi-codegen/package.json`, `packages/latex/package.json`, `packages/merman/package.json`, `packages/nav-menus/package.json`, `packages/patchmark/package.json`, `packages/plugin-browser/package.json`, `packages/plugin/package.json`, `packages/plugins/figma/package.json`, `packages/protocol/package.json`, `packages/schema/package.json`, `packages/sdk/package.json`, `packages/server/package.json`, `packages/session-ui/package.json`, `packages/simulation/package.json`, `packages/theme/package.json`, `packages/ui/package.json`, `packages/util/package.json`, `sdks/vscode/package.json`, `services/update/package.json` | Version `2.3.0` → `2.3.0-N`, written by `bun bump`. | Keep every manifest on the fork revision in lockstep with the CLI. | Take upstream's manifest changes, then rerun `bun bump <upstream>-1`; never hand-merge version lines. |
 
 | `packages/util/src/global.ts` | Use Codev2 global roots. | Isolate the Codev2 preview from existing installations. | Keep the Codev2 root; retain upstream path and layer behavior. |
 | `packages/util/test/global.test.ts` | Assert Codev2 global paths. | Isolate the Codev2 preview from existing installations. | Adapt expectations to the fork root while retaining upstream contracts. |
@@ -49,8 +50,8 @@ not apply. Do not truncate history or merge unrelated histories.
 | `packages/cli/src/services/service-config.ts` | Allocate separate preview and channel service ports. | Isolate the Codev2 preview from existing installations. | Keep separate ports and hash namespace, including Windows reserved-port handling. |
 | `packages/cli/test/service.test.ts` | Verify Codev2 service port allocation. | Isolate the Codev2 preview from existing installations. | Keep channel and Windows contracts, adjust only fork ports. |
 | `packages/cli/src/commands/commands.ts` | Name the preview CLI codev2; add `configure`, `skill` (search, pull, push, stack list/pull, office), `upload`, `codegraph`, `migrate-v1` and `debug stats`. | Isolate the preview and expose the Codev gateway, SkillHub, upload and migration surfaces. | Keep upstream commands and parameter definitions; re-append the Codev commands after upstream ones. |
-| `packages/cli/script/build.ts` | Compile the Codev2 CLI display name. | Isolate the Codev2 preview from existing installations. | Keep upstream build internals and binary filenames until fork packaging is ready. |
-| `packages/cli/package.json` | Expose only the codev2 executable from the workspace; depend on `@codev/gateway`, `@codev/skillhub` and `@codev/upload`. | Isolate the preview and let the Codev commands call the fork-only packages. | Do not reinstall opencode or codev aliases; keep the additive workspace dependencies. |
+| `packages/cli/script/build.ts` | Compile the Codev2 CLI display name. | Isolate the Codev2 preview from existing installations. | Keep upstream build internals and binary filenames; npm release renames at publish time. |
+| `packages/cli/package.json` | Expose only the codev2 executable from the workspace; depend on `@codev/brand`, `@codev/gateway`, `@codev/skillhub` and `@codev/upload`; add `release` / `publish:npm`. | Isolate the preview, wire Codev packages, and publish `codev2.0-code` like v1 `codev-code`. | Do not reinstall opencode or codev aliases; keep the additive workspace dependencies and release scripts. |
 | `packages/cli/src/index.ts` | Provide a preview-only updater with no upstream install actions; register the Codev command handlers. | Isolate the preview and wire the Codev commands. | Keep the Codev updater binding until a fork release channel is verified; keep the handler entries beside upstream ones. |
 | `packages/schema/src/config/flag.ts` | Register `codev_gateway`, `codev_skillhub`, `codev_upload`, `codev_sandbox` and `codev_migrate_v1`. | Gate Codev features with the existing v2 flag mechanism. | Keep upstream flags and append the Codev keys to the registry. |
 
@@ -91,6 +92,7 @@ not apply. Do not truncate history or merge unrelated histories.
 - `packages/cli/src/services/codev-updater.ts`: preview update policy; no upstream installers.
 - `packages/cli/test/codev-updater.test.ts`: preview update isolation contract.
 - `packages/cli/bin/codev2.cjs`: isolated command entry point.
+- `packages/cli/script/release.ts` and `packages/cli/script/publish.ts`: local npm release of unscoped `codev2.0-code` (+ platform packages), staging from `dist/cli-*` without mutating the desktop CLI layout.
 - `script/check-divergences.ts`: validates this registry against the pinned baseline.
 - `.github/workflows/check-codev.yml`: validates divergence coverage with full history.
 - `packages/codev-gateway`: gateway/SSO auth file, backend client, model limits and v2 provider config block (`providers`/`package`/`settings`/`capabilities`).
@@ -100,9 +102,10 @@ not apply. Do not truncate history or merge unrelated histories.
 - `packages/codev-skillhub`: SkillHub search/install/publish, Stack and Office installers.
 - `packages/codev-upload`: session statistics push, log export and upload to the analysis backend.
 - `packages/cli/src/commands/handlers/{configure,upload,codegraph,migrate-v1}.ts`, `skill/*.ts` and `debug/stats.ts`: Codev command handlers.
-- `packages/cli/src/services/codev-flag.ts` and `packages/cli/test/codev-flag.test.ts`: flag guard for Codev commands that run without a Location.
+- `packages/cli/src/services/codev-flag.ts` and `packages/cli/test/codev-flag.test.ts`: flag guard for Codev commands that run without a Location; `codev_gateway`, `codev_skillhub` and `codev_upload` are on in every build, the rest only in local/dev.
 - `codev.upstream.json`: upstream and v1 source provenance.
 - `CODEV-MIGRATION.md`: implementation status and acceptance gates.
+- `script/bump-version.ts`: fork revision bump (`2.3.0` → `2.3.0-1`).
 - `codev-v1-inventory.json`: source divergence inventory; `pending`, `port` and `review` entries are not implemented.
 
 ## Known gaps

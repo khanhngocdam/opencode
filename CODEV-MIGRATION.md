@@ -67,3 +67,30 @@ installs next to Codev v1 and OpenCode without sharing commands or keybindings b
 `codev-v1-inventory.json` rows use `covered` (implemented in v2), `port` (needs v2 integration),
 `drop` (not applicable to the fork), or `review` (needs manual comparison against v2). No row is `pending`.
 `review` rows are not evidence of implementation.
+
+## First build (`2.3.0-1`)
+
+Version rule matches Codev v1: upstream base + fork revision suffix.
+
+```sh
+bun bump 2.3.0-1
+# or: bun bump   # auto → 2.3.0-1 from 2.3.0
+
+# CLI (all platforms for npm; use --single --baseline for local/desktop-only)
+cd packages/cli
+$env:OPENCODE_VERSION="2.3.0-1"
+$env:OPENCODE_CHANNEL="latest"
+bun run build
+
+# Desktop (requires CLI dist above, prefers baseline)
+cd ../desktop
+$env:OPENCODE_VERSION="2.3.0-1"
+$env:OPENCODE_CHANNEL="latest"
+bun run build
+bun run pack
+
+# npm (requires npm login; dist already built → --skip-build)
+cd ../cli
+bun run release -- --skip-build
+# users: npm i -g codev2.0-code && codev2
+```

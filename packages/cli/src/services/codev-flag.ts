@@ -4,12 +4,19 @@ import { OPENCODE_CHANNEL } from "../version"
 
 type CodevKey = Extract<ConfigFlag.Key, `codev_${string}`>
 
+// Verified Codev CLI features ship in every build. The rest (sandbox, v1 import) stay dev-only until verified.
+const RELEASED = new Set<CodevKey>(["codev_gateway", "codev_skillhub", "codev_upload"])
+
 /**
  * Resolves a Codev feature flag for commands that run before any Location exists.
- * Mirrors Core's `Flag` precedence for `OPENCODE_FLAGS` (`key`, `-key`, `all`), then defaults on for local and dev
- * builds. `experimental.<key>` in config is not read here; set the environment variable to enable in releases.
+ * Mirrors Core's `Flag` precedence for `OPENCODE_FLAGS` (`key`, `-key`, `all`), then defaults on for released keys
+ * in every build and for the rest in local and dev builds. `experimental.<key>` in config is not read here.
  */
-export function codevFlagEnabled(key: CodevKey, env: string | undefined = process.env.OPENCODE_FLAGS) {
+export function codevFlagEnabled(
+  key: CodevKey,
+  env: string | undefined = process.env.OPENCODE_FLAGS,
+  channel: string = OPENCODE_CHANNEL,
+) {
   const entries = new Map(
     (env ?? "")
       .split(",")
@@ -20,7 +27,8 @@ export function codevFlagEnabled(key: CodevKey, env: string | undefined = proces
   const explicit = entries.get(key)
   if (explicit !== undefined) return explicit
   if (entries.get(ConfigFlag.wildcard) === true && !ConfigFlag.optInOnly.has(key)) return true
-  return !ConfigFlag.optInOnly.has(key) && (OPENCODE_CHANNEL === "local" || OPENCODE_CHANNEL === "dev")
+  if (RELEASED.has(key)) return true
+  return !ConfigFlag.optInOnly.has(key) && (channel === "local" || channel === "dev")
 }
 
 /** Fails the command unless the flag is enabled. */

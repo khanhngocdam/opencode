@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@opencode/cli",
-  "version": "2.3.0",
+  "version": "2.3.0-1",
   "type": "module",
   "license": "MIT",
   "bin": {
@@ -19,6 +19,8 @@
     "build:node": "bun run script/build-node.ts",
     "pack": "bun run script/pack.ts",
     "pack:docker": "chmod +x dist/cli-linux-*-musl/bin/opencode && mkdir -p ../../dist/docker && docker buildx build --platform linux/amd64,linux/arm64 --output type=oci,dest=../../dist/docker/opencode-image.tar .",
+    "release": "bun run script/release.ts",
+    "publish:npm": "bun run script/publish.ts",
     "dev": "bun run src/index.ts",
     "test": "bun test --timeout 30000 --only-failures",
     "typecheck": "bun check --no-script -b",
@@ -28,6 +30,7 @@
     "@agentclientprotocol/sdk": "1.6.0",
     "@clack/core": "1.0.0-alpha.1",
     "@clack/prompts": "1.0.0-alpha.1",
+    "@codev/brand": "workspace:*",
     "@codev/gateway": "workspace:*",
     "@codev/skillhub": "workspace:*",
     "@codev/upload": "workspace:*",
