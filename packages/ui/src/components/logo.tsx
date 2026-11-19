@@ -1,5 +1,7 @@
 import { type ComponentProps } from "solid-js"
 
+// Codev "C" (block art `█▀▀▀ / █ / ▀▀▀▀`, the same glyph as the TUI badge and the app icon). It stays on
+// --icon-strong-base because its side-panel call site is an opacity-10 watermark, where brand red reads as pink.
 export const Mark = (props: { class?: string }) => {
   return (
     <svg
@@ -9,12 +11,12 @@ export const Mark = (props: { class?: string }) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path data-slot="logo-logo-mark-shadow" d="M12 16H4V8H12V16Z" fill="var(--icon-weak-base)" />
-      <path data-slot="logo-logo-mark-o" d="M12 4H4V16H12V4ZM16 20H0V0H16V20Z" fill="var(--icon-strong-base)" />
+      <path data-slot="logo-mark-c" d="M0 0H16V4H4V16H16V20H0Z" fill="var(--icon-strong-base)" />
     </svg>
   )
 }
 
+// The same "C" at 80x100, brand-locked through --logo-splash in logo.css.
 export const Splash = (props: Pick<ComponentProps<"svg">, "ref" | "class">) => {
   return (
     <svg
@@ -25,38 +27,32 @@ export const Splash = (props: Pick<ComponentProps<"svg">, "ref" | "class">) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M60 80H20V40H60V80Z" fill="var(--icon-base)" />
-      <path d="M60 20H20V80H60V20ZM80 100H0V0H80V100Z" fill="var(--icon-strong-base)" />
+      <path data-slot="logo-splash-c" d="M0 0H80V20H20V80H80V100H0Z" fill="var(--logo-splash)" />
     </svg>
   )
 }
 
+// Lowercase "codev" wordmark: the TUI pixel glyphs (`wordmarkHalves` in packages/tui/src/logo.ts) on a 24x6 grid.
+// "co" is brand navy on light and the theme foreground on dark, "dev" is always brand red (see logo.css).
 export const Logo = (props: { class?: string }) => {
   return (
     <svg
+      data-component="logo-wordmark"
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 234 42"
+      viewBox="0 0 24 6"
       fill="none"
       classList={{ [props.class ?? ""]: !!props.class }}
     >
-      <g>
-        <path d="M18 30H6V18H18V30Z" fill="var(--icon-weak-base)" />
-        <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--icon-base)" />
-        <path d="M48 30H36V18H48V30Z" fill="var(--icon-weak-base)" />
-        <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="var(--icon-base)" />
-        <path d="M84 24V30H66V24H84Z" fill="var(--icon-weak-base)" />
-        <path d="M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z" fill="var(--icon-base)" />
-        <path d="M108 36H96V18H108V36Z" fill="var(--icon-weak-base)" />
-        <path d="M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z" fill="var(--icon-base)" />
-        <path d="M144 30H126V18H144V30Z" fill="var(--icon-weak-base)" />
-        <path d="M144 12H126V30H144V36H120V6H144V12Z" fill="var(--icon-strong-base)" />
-        <path d="M168 30H156V18H168V30Z" fill="var(--icon-weak-base)" />
-        <path d="M168 12H156V30H168V12ZM174 36H150V6H174V36Z" fill="var(--icon-strong-base)" />
-        <path d="M198 30H186V18H198V30Z" fill="var(--icon-weak-base)" />
-        <path d="M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z" fill="var(--icon-strong-base)" />
-        <path d="M234 24V30H216V24H234Z" fill="var(--icon-weak-base)" />
-        <path d="M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z" fill="var(--icon-strong-base)" />
-      </g>
+      <path
+        data-slot="logo-wordmark-co"
+        d="M0 1h4v1h-4zM5 1h4v1h-4zM0 2h1v3h-1zM5 2h1v3h-1zM8 2h1v3h-1zM0 5h4v1h-4zM5 5h4v1h-4z"
+        fill="var(--logo-wordmark-co)"
+      />
+      <path
+        data-slot="logo-wordmark-dev"
+        d="M13 0h1v1h-1zM10 1h4v1h-4zM15 1h4v1h-4zM20 1h1v4h-1zM23 1h1v4h-1zM10 2h1v3h-1zM13 2h1v3h-1zM15 2h1v1h-1zM18 2h1v1h-1zM15 3h4v1h-4zM15 4h1v1h-1zM10 5h4v1h-4zM15 5h4v1h-4zM21 5h2v1h-2z"
+        fill="var(--logo-wordmark-dev)"
+      />
     </svg>
   )
 }

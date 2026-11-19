@@ -2,3 +2,30 @@
   width: 16px;
   aspect-ratio: 4/5;
 }
+
+/* Codev brand colors (landing page --color-brand-navy / --color-brand-red, mirrored as `brand` in
+   packages/tui/src/logo.ts). Literal hex, not theme tokens: the brand reads the same on every surface. */
+[data-component="logo-splash"] {
+  --logo-splash: #ee0033;
+}
+
+[data-component="logo-wordmark"] {
+  --logo-wordmark-co: #19224c;
+  --logo-wordmark-dev: #ee0033;
+}
+
+/* Navy goes muddy on dark backgrounds, so "co" follows the theme foreground there. */
+@media (prefers-color-scheme: dark) {
+  [data-component="logo-wordmark"] {
+    --logo-wordmark-co: var(--icon-strong-base);
+  }
+}
+
+/* The app stamps data-color-scheme on <html>; an explicit choice beats the OS preference in both directions. */
+[data-color-scheme="light"] [data-component="logo-wordmark"] {
+  --logo-wordmark-co: #19224c;
+}
+
+[data-color-scheme="dark"] [data-component="logo-wordmark"] {
+  --logo-wordmark-co: var(--icon-strong-base);
+}

@@ -15,7 +15,7 @@ import {
 } from "@opentui/core"
 import { Locale } from "../util/locale"
 import { stringWidth } from "../util/string-width"
-import { go } from "../logo"
+import { badge, brand } from "../logo"
 import { monoTruncate } from "./mono"
 import type { RunSplashTheme } from "./theme"
 
@@ -176,7 +176,7 @@ function buildExit(input: SplashWriterInput, ctx: ScrollbackRenderContext): Scro
   const left = input.theme.left
   const right = input.theme.right
   const leftShadow = input.theme.leftShadow
-  const mark = input.mono ? ["[O]"] : go.right.slice(1)
+  const mark = input.mono ? ["[C]"] : badge
   const top = 1
   const body_left = (mark[0]?.length ?? 0) + 2
   const session = "Session  "
@@ -190,7 +190,7 @@ function buildExit(input: SplashWriterInput, ctx: ScrollbackRenderContext): Scro
       draw(lines, mark[i] ?? "", {
         left: 0,
         top: top + i,
-        fg: left,
+        fg: brand.red,
         shadow: leftShadow,
       })
     }
@@ -287,7 +287,7 @@ export function entrySplashLayout(input: { width: number; version: string; detai
     .filter((path) => stringWidth(path) < stringWidth(detail))
   let layout = { label: Locale.takeWidth("oc mini", input.width), version: "", path: "", metadata: "" }
   const stages = [
-    { label: `${input.mono ? "[O]" : "▪"} oc mini` },
+    { label: `${input.mono ? "[C]" : "▪"} oc mini` },
     ...(leaf ? [{ path: leaf }] : []),
     ...(input.version ? [{ version: input.version }] : []),
     ...paths.concat(detail ? [detail] : []).map((path) => ({ path })),

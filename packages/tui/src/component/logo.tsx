@@ -1,75 +1,36 @@
-import { RGBA, TextAttributes } from "@opentui/core"
-import { For, type JSX } from "solid-js"
+import { type ColorInput, TextAttributes } from "@opentui/core"
+import { For } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
-import { useTheme } from "../context/theme"
-import { tint } from "../theme/color"
-import { logo } from "../logo"
+import { useTheme, useThemes } from "../context/theme"
+import { badge, brand, wordmarkHalves } from "../logo"
 
+// Brand-locked like the landing page wordmark: "co" navy on light and the theme text on dark, "dev" red, no shadow.
 export function Logo() {
   const theme = useTheme()
+  const themes = useThemes()
   const dimensions = useTerminalDimensions()
-
-  const renderLine = (line: string, fg: RGBA, bold: boolean): JSX.Element[] => {
-    const shadow = tint(theme.background.base, fg, 0.25)
-    const attrs = bold ? TextAttributes.BOLD : undefined
-    return Array.from(line).map((char) => {
-      if (char === "_") {
-        return (
-          <text fg={fg} bg={shadow} attributes={attrs} selectable={false}>
-            {" "}
-          </text>
-        )
-      }
-      if (char === "^") {
-        return (
-          <text fg={fg} bg={shadow} attributes={attrs} selectable={false}>
-            ▀
-          </text>
-        )
-      }
-      if (char === "~") {
-        return (
-          <text fg={shadow} attributes={attrs} selectable={false}>
-            ▀
-          </text>
-        )
-      }
-      if (char === ",") {
-        return (
-          <text fg={shadow} attributes={attrs} selectable={false}>
-            ▄
-          </text>
-        )
-      }
-      return (
-        <text fg={fg} attributes={attrs} selectable={false}>
-          {char}
-        </text>
-      )
-    })
-  }
+  const co = () => (themes.mode() === "light" ? brand.navy : theme.text.base)
+  const line = (text: string, fg: ColorInput) => (
+    <text fg={fg} attributes={TextAttributes.BOLD} selectable={false}>
+      {text}
+    </text>
+  )
 
   return (
     <box>
       {dimensions().height < 12 ? null : dimensions().width < 22 ? (
-        <For each={logo.left.slice(1).map((line) => line.slice(0, 4))}>
-          {(line) => <box flexDirection="row">{renderLine(line, theme.text.base, true)}</box>}
-        </For>
+        <For each={badge}>{(row) => line(row, brand.red)}</For>
       ) : dimensions().width < 44 ? (
         <>
-          <For each={logo.left.slice(1)}>
-            {(line) => <box flexDirection="row">{renderLine(line, theme.text.muted, false)}</box>}
-          </For>
-          <For each={logo.right}>
-            {(line) => <box flexDirection="row">{renderLine(line, theme.text.base, true)}</box>}
-          </For>
+          <For each={wordmarkHalves.slice(1)}>{(row) => line(row.left, co())}</For>
+          <For each={wordmarkHalves}>{(row) => line(row.right, brand.red)}</For>
         </>
       ) : (
-        <For each={logo.left}>
-          {(line, index) => (
+        <For each={wordmarkHalves}>
+          {(row) => (
             <box flexDirection="row" gap={1}>
-              <box flexDirection="row">{renderLine(line, theme.text.muted, false)}</box>
-              <box flexDirection="row">{renderLine(logo.right[index()], theme.text.base, true)}</box>
+              {line(row.left, co())}
+              {line(row.right, brand.red)}
             </box>
           )}
         </For>

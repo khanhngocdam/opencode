@@ -446,7 +446,7 @@ test("loads the transcript code font before opening rich history", async ({ page
       code.style.font = "440 13px var(--font-family-mono)"
       code.textContent = "code"
       code.getBoundingClientRect()
-      const loaded = document.fonts.check('440 13px "IBM Plex Mono"')
+      const loaded = document.fonts.check('440 13px "Roboto Mono"')
       code.remove()
 
       return loaded

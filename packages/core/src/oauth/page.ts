@@ -8,7 +8,8 @@
 //
 // The visual language mirrors the OpenCode app: the design tokens are a curated
 // subset of the OC-2 semantic tokens in `packages/ui/src/styles/theme.css`, and
-// the wordmark is the same geometry as `packages/ui/src/components/logo.tsx`.
+// the wordmark is the same geometry as `packages/ui/src/components/logo.tsx`. Codev: brand wordmark and the
+// Roboto-only font stacks of the Viettel font-licensing directive.
 // Keep this file in sync with those sources when the brand changes.
 
 export interface CallbackPageOptions {
@@ -157,6 +158,7 @@ const LIGHT_VARS = `
     --oc-text-weak: #8f8f8f;
     --oc-border-weak: #e5e5e5;
     --oc-icon-strong: #171717;
+    --oc-wordmark-co: #19224c;
     --oc-icon-base: #8f8f8f;
     --oc-icon-weak: #dbdbdb;
     --oc-success: #2dba26;
@@ -173,6 +175,7 @@ const DARK_VARS = `
     --oc-text-weak: rgba(255,255,255,.422);
     --oc-border-weak: #282828;
     --oc-icon-strong: #ededed;
+    --oc-wordmark-co: #ededed;
     --oc-icon-base: #7e7e7e;
     --oc-icon-weak: #343434;
     --oc-success: #12c905;
@@ -183,8 +186,8 @@ const DARK_VARS = `
 
 const STYLES = `
   :root { color-scheme: light dark;${LIGHT_VARS}
-    --oc-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --oc-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --oc-font-sans: "Roboto", sans-serif;
+    --oc-font-mono: "Roboto Mono", monospace;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {${DARK_VARS} } }
   :root[data-theme="dark"] {${DARK_VARS} }
@@ -249,24 +252,10 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 `
 
-// OpenCode wordmark — same path geometry as packages/ui/src/components/logo.tsx (Logo).
-const WORDMARK = `<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234 42" fill="none" aria-label="OpenCode" role="img">
-        <path d="M18 30H6V18H18V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--oc-icon-base)" />
-        <path d="M48 30H36V18H48V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="var(--oc-icon-base)" />
-        <path d="M84 24V30H66V24H84Z" fill="var(--oc-icon-weak)" />
-        <path d="M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z" fill="var(--oc-icon-base)" />
-        <path d="M108 36H96V18H108V36Z" fill="var(--oc-icon-weak)" />
-        <path d="M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z" fill="var(--oc-icon-base)" />
-        <path d="M144 30H126V18H144V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M144 12H126V30H144V36H120V6H144V12Z" fill="var(--oc-icon-strong)" />
-        <path d="M168 30H156V18H168V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M168 12H156V30H168V12ZM174 36H150V6H174V36Z" fill="var(--oc-icon-strong)" />
-        <path d="M198 30H186V18H198V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z" fill="var(--oc-icon-strong)" />
-        <path d="M234 24V30H216V24H234Z" fill="var(--oc-icon-weak)" />
-        <path d="M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z" fill="var(--oc-icon-strong)" />
+// Codev wordmark — same pixel geometry and brand colors as packages/ui/src/components/logo.tsx (Logo).
+const WORDMARK = `<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 6" fill="none" aria-label="Codev" role="img">
+        <path d="M0 1h4v1h-4zM5 1h4v1h-4zM0 2h1v3h-1zM5 2h1v3h-1zM8 2h1v3h-1zM0 5h4v1h-4zM5 5h4v1h-4z" fill="var(--oc-wordmark-co)" />
+        <path d="M13 0h1v1h-1zM10 1h4v1h-4zM15 1h4v1h-4zM20 1h1v4h-1zM23 1h1v4h-1zM10 2h1v3h-1zM13 2h1v3h-1zM15 2h1v1h-1zM18 2h1v1h-1zM15 3h4v1h-4zM15 4h1v1h-1zM10 5h4v1h-4zM15 5h4v1h-4zM21 5h2v1h-2z" fill="#ee0033" />
       </svg>`
 
 const ICON_CHECK = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="m8.5 12.5 2.4 2.4 4.6-5.4" /></svg>`

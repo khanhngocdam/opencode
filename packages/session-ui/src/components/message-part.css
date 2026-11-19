@@ -1947,7 +1947,7 @@
     }
 
     [data-component="button-v2"] {
-      font-family: var(--v2-font-family-sans, "Inter", sans-serif);
+      font-family: var(--v2-font-family-sans, "Roboto", sans-serif);
       font-weight: 530;
       font-variation-settings:
         "wght" 530,

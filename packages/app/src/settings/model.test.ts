@@ -218,21 +218,21 @@ test.each(["local", "dev", "beta", "prod", undefined] as const)("Recent availabi
   expect(recentSessionsAvailable("web", channel)).toBe(false)
 })
 
-test("font defaults are Inter and IBM Plex Mono", () => {
-  expect(sansDefault).toBe("Inter")
-  expect(monoDefault).toBe("IBM Plex Mono")
+test("font defaults are Roboto and Roboto Mono", () => {
+  expect(sansDefault).toBe("Roboto")
+  expect(monoDefault).toBe("Roboto Mono")
 })
 
 test.each([
-  { name: "sans", family: sansFontFamily, font: undefined, prefix: '"Inter", ' },
-  { name: "sans", family: sansFontFamily, font: "", prefix: '"Inter", ' },
-  { name: "sans", family: sansFontFamily, font: "   ", prefix: '"Inter", ' },
-  { name: "sans", family: sansFontFamily, font: "Custom Sans", prefix: '"Custom Sans", "Inter", ' },
-  { name: "mono", family: monoFontFamily, font: undefined, prefix: '"IBM Plex Mono", ' },
-  { name: "mono", family: monoFontFamily, font: "", prefix: '"IBM Plex Mono", ' },
-  { name: "mono", family: monoFontFamily, font: "   ", prefix: '"IBM Plex Mono", ' },
-  { name: "mono", family: monoFontFamily, font: "Custom Mono", prefix: '"Custom Mono", "IBM Plex Mono", ' },
-  { name: "terminal", family: terminalFontFamily, font: undefined, prefix: '"JetBrainsMono Nerd Font Mono", ' },
+  { name: "sans", family: sansFontFamily, font: undefined, prefix: '"Roboto", ' },
+  { name: "sans", family: sansFontFamily, font: "", prefix: '"Roboto", ' },
+  { name: "sans", family: sansFontFamily, font: "   ", prefix: '"Roboto", ' },
+  { name: "sans", family: sansFontFamily, font: "Custom Sans", prefix: '"Custom Sans", "Roboto", ' },
+  { name: "mono", family: monoFontFamily, font: undefined, prefix: '"Roboto Mono", ' },
+  { name: "mono", family: monoFontFamily, font: "", prefix: '"Roboto Mono", ' },
+  { name: "mono", family: monoFontFamily, font: "   ", prefix: '"Roboto Mono", ' },
+  { name: "mono", family: monoFontFamily, font: "Custom Mono", prefix: '"Custom Mono", "Roboto Mono", ' },
+  { name: "terminal", family: terminalFontFamily, font: undefined, prefix: '"Roboto Mono", ' },
 ])("$name font family for $font starts with $prefix", ({ family, font, prefix }) => {
   expect(family(font)).toStartWith(prefix)
 })

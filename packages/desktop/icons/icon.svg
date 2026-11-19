@@ -1,0 +1,22 @@
+<!-- Source of record for every generated icon in icons/{dev,beta,prod}/. -->
+<!-- Regenerate with `bun ./scripts/generate-icons.ts` from packages/desktop. -->
+<!--
+  The CoDev "C" mark in brand red #ee0033 (the "dev" half of the wordmark, see
+  packages/tui/src/logo.ts) on a white tile. The glyph is the block art
+  `█▀▀▀ / █ / ▀▀▀▀` resolved to a 4x5 pixel grid with a one-unit stroke, drawn
+  at the same proportions as the VS Code extension icon (sdks/vscode/images/
+  icon.svg): unit = 120 of 1024, so the mark is 480x600 centered on the tile.
+
+  This is the flat, full-bleed variant used for Windows, Linux and the Store
+  tiles. The generator renders the same geometry inset to 824/1024 with a drop
+  shadow for icon.icns and dock.png, which is the macOS Big Sur icon grid.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="229" fill="#ffffff"/>
+  <!-- top bar -->
+  <rect x="272" y="212" width="480" height="120" fill="#ee0033"/>
+  <!-- left column -->
+  <rect x="272" y="212" width="120" height="600" fill="#ee0033"/>
+  <!-- bottom bar -->
+  <rect x="272" y="692" width="480" height="120" fill="#ee0033"/>
+</svg>

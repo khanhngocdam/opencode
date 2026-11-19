@@ -28,6 +28,9 @@ These v1 inventory rows are classified as covered by the Codev2 identity work
 - Root / data dir rename → `codev2` via `packages/util/src/global.ts`
 - CLI bin / help naming → `codev2`
 - Brand package + prompt rebrand
+- Visual brand: red codev wordmark/"C" in TUI, CLI, web, desktop and OAuth page; v1 app icons and favicons;
+  Roboto/Roboto Mono only with Monotype names patched out (font directive). Typechecked and unit-tested; not yet
+  checked visually in a built desktop app. The new-session interactive wordmark game is replaced by a static logo.
 - Desktop app IDs, deep links, updater isolation
 - Service discovery / ports under Codev2 state
 - Fork governance files (`DIVERGENCES.md`, check scripts, CI)

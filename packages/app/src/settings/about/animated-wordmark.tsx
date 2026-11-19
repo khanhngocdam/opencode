@@ -2,9 +2,9 @@ import { createEffect, For, on, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { prefersReducedMotion } from "@opencode/ui/motion"
 
-const target = ["o", "p", "e", "n", "c", "o", "d", "e"] as const
+const target = ["c", "o", "d", "e", "v"] as const
 
-const choices = ["o", "p", "e", "n", "c", "d"] as const
+const choices = ["c", "o", "d", "e", "v"] as const
 
 export function AnimatedWordmark(props: { active: boolean }) {
   const [state, setState] = createStore({ letters: [...target] })
@@ -48,7 +48,7 @@ export function AnimatedWordmark(props: { active: boolean }) {
   onCleanup(() => timers.forEach(clearTimeout))
 
   return (
-    <svg class="settings-about-wordmark" viewBox="0 0 234 42" aria-hidden="true">
+    <svg class="settings-about-wordmark" viewBox="0 0 144 42" aria-hidden="true">
       <defs>
         <symbol id="settings-about-letter-o" viewBox="0 0 24 42">
           <path class="settings-about-letter-shadow" d="M18 30H6V18H18V30Z" />
@@ -74,11 +74,13 @@ export function AnimatedWordmark(props: { active: boolean }) {
           <path class="settings-about-letter-shadow" d="M18 30H6V18H18V30Z" />
           <path d="M18 12H6V30H18V12ZM24 36H0V6H18V0H24V36Z" />
         </symbol>
+        <symbol id="settings-about-letter-v" viewBox="0 0 24 42">
+          <path class="settings-about-letter-shadow" d="M18 30H6V18H18V30Z" />
+          <path d="M0 6H6V30H0ZM18 6H24V30H18ZM6 30H18V36H6Z" />
+        </symbol>
       </defs>
       <For each={state.letters}>
-        {(letter, index) => (
-          <use href={`#settings-about-letter-${letter}`} x={index() * 30} width="24" height="42" />
-        )}
+        {(letter, index) => <use href={`#settings-about-letter-${letter}`} x={index() * 30} width="24" height="42" />}
       </For>
     </svg>
   )

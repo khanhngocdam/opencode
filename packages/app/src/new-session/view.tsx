@@ -30,7 +30,6 @@ import { useProviders } from "@/providers/catalog/providers"
 import { NEW_SESSION_CONTENT_WIDTH } from "@/new-session/layout"
 import { Persist, persisted } from "@/runtime/persistence/storage"
 import { Persistence } from "@/runtime/persistence/schema"
-import { useSettings } from "@/settings/model"
 import type { NewSessionWorkspaceController } from "./workspace/controller"
 import {
   CHECKOUT_PLACEHOLDER_DELAY_MS,
@@ -40,16 +39,7 @@ import {
   type CheckoutLabelEvent,
 } from "./workspace/checkout-machine"
 import { BaseBranchPicker } from "./workspace/selector"
-import { NewSessionBrickBreaker } from "./brick-breaker"
-import { NewSessionPinBoard } from "./pin-board"
-import { NewSessionWordmark } from "./wordmark"
-import {
-  createWordmarkState,
-  selectBrickBreaker,
-  selectPinBoard,
-  transitionWordmark,
-  type WordmarkEvent,
-} from "./wordmark-machine"
+import { Logo } from "@opencode/ui/logo"
 
 const providerTipDismissalDuration = 30 * 24 * 60 * 60 * 1000
 
@@ -72,19 +62,6 @@ export function NewSessionView(props: {
     WorkspaceOnboardingSchema,
     { used: false },
   )
-
-  const settings = useSettings()
-
-  const [wordmark, setWordmark] = createSignal(createWordmarkState(false))
-  const [logo, setLogo] = createSignal<HTMLDivElement>()
-
-  const dispatchWordmark = (event: WordmarkEvent) =>
-    untrack(() => {
-      const next = transitionWordmark(wordmark(), event)
-      setWordmark(next.state)
-
-      if (next.effects.some((effect) => effect.type === "focus.composer")) props.composer.restoreFocus()
-    })
 
   const location = (project?: PromptProject) =>
     props.location({
@@ -109,13 +86,10 @@ export function NewSessionView(props: {
         />
         <div class="absolute inset-x-0 top-[25.375%] flex justify-center px-6">
           <div class={NEW_SESSION_CONTENT_WIDTH}>
-            <NewSessionWordmark
-              ref={setLogo}
-              state={wordmark}
-              onEvent={dispatchWordmark}
-              play
-              sound={settings.sounds.interfaceEnabled}
-            />
+            {/* Codev: the static brand wordmark replaces upstream's interactive "opencode" wordmark and its games. */}
+            <div aria-hidden="true" class="pointer-events-none mx-auto w-2/5 max-w-[288px]">
+              <Logo class="block w-full" />
+            </div>
             <div class="mt-8 flex flex-col gap-3">
               <div data-slot="new-session-composer" class="flex flex-col gap-1">
                 <div class="relative z-10">
@@ -140,28 +114,6 @@ export function NewSessionView(props: {
             </div>
           </div>
         </div>
-        <Show when={selectPinBoard(wordmark(), logo())}>
-          {(board) => (
-            <NewSessionPinBoard
-              logo={board().logo}
-              sound={settings.sounds.interfaceEnabled}
-              entrance={board().entrance}
-              closing={board().closing}
-              ref={(handle) => dispatchWordmark({ type: "board.mounted", board: handle })}
-            />
-          )}
-        </Show>
-        <Show when={selectBrickBreaker(wordmark())}>
-          {(game) => (
-            <NewSessionBrickBreaker
-              panel={panel}
-              board={game().board}
-              ball={game().ball}
-              sound={settings.sounds.interfaceEnabled}
-              onDone={() => dispatchWordmark({ type: "game.done" })}
-            />
-          )}
-        </Show>
         <NewSessionTips selection={props.composer.model.selection} onDone={props.composer.restoreFocus} />
       </div>
     </div>
