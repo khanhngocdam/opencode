@@ -40,7 +40,8 @@ import { Spinner } from "./spinner"
 //   3. open the model picker for the new provider.
 // `config.update` only patches `shell` in v2, so the provider block is written to the config file directly; the
 // server's config watcher reloads it. The v2 dialog stack has no persistent (non-dismissable) mode, so escape
-// always closes the flow; `/configure` or `codev2 configure` reopens it.
+// always closes the flow; on an install with no usable model the first-run gate in app.tsx reopens it at once, and
+// otherwise `/configure` or `codev2 configure` does.
 //
 // Flow state lives in the awaited controller functions below; the components they render are pure views over
 // controller-owned signals, so a remount is invisible.

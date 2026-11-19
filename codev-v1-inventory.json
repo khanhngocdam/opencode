@@ -69,9 +69,9 @@
     },
     {
       "id": "v1-012",
-      "status": "drop",
+      "status": "covered",
       "sourceRow": "| `packages/tui/src/feature-plugins/sidebar/footer.tsx` | Deleted the dismissable \"Getting started\" card (free-models pitch + `/connect` pointer + `dismissed_getting_started` KV flag); the sidebar footer keeps only the cwd path display | The card advertises upstream's hosted free Zen models — which the fork hides — and points at `/connect` while first-run setup routes through `/configure`; the fork's startup gate covers onboarding. | Keep the card deleted; take upstream's changes to the remaining path display. |",
-      "evidence": "Not applicable or intentionally not porting to v2 preview"
+      "evidence": "Getting started card and its test deleted (sidebar/footer.tsx); setup goes through the /configure gate"
     },
     {
       "id": "v1-013",
@@ -311,7 +311,7 @@
       "id": "v1-052",
       "status": "port",
       "sourceRow": "| `packages/tui/src/app.tsx` | Terminal title \"OpenCode\"/\"OC \\|\" → \"CoDev Code\"/\"CC \\|\"; the configure-gate effect is a stateless forced-setup invariant — while `sync.status === \"complete\" && !useConnected() && dialog.stack.length === 0` it (re)opens the fork's `DialogConfigure` (component/dialog-configure.tsx, new file), so escaping any gate-launched flow or a credential-only save bounces back to the gate instead of an unconfigured chat (gates on `!useConnected()`, not `provider.length === 0` — hosted Zen free models always register); added the `codev.configure` command (`/configure`, opening `<DialogConfigure dismissable={connected()} />` — dismissable on a configured install, the gate otherwise) and a `CODEV_CONFIGURE=1` mount hook for `codev configure`; home screen skipped — plain startup seeds the `dummy` session route and auto-opens a new empty session (reusing a leftover default-titled empty one via `openNewSession`/`findEmptySession`), `session.new` and the current-session `session.deleted` handler open a new session instead of navigating home, and the `-c` resolver prefers non-default-titled sessions so it lands on the last real conversation; added the `app.exit.confirm` command + `EXIT_CONFIRM_WINDOW` const (double-press Ctrl+C to quit: first press shows a toast, second within 1.5 s exits) and gathered its `app_exit_confirm` binding alongside `app_exit`; an onMount \"Usage reporting is paused\" warning toast next to the raster-font one, shown when `@codev/upload/nudge`'s `shouldNudgeSignIn()` says the background stats push stalled for lack of a CoDev SSO session (SSO-origin keys only; deliberately every launch until the sign-in happens — see the session-upload wiring row); a one-shot `createEffect` after `sync.status === \"complete\"` runs `@codev/gateway`'s `ensureGatewayKey()` (the startup gateway-key pre-flight shared with the desktop controller): a `refreshed` result merges the re-minted key into the auth registry for every id it names via `sdk.client.auth.set`, then `instance.dispose()` + `sync.bootstrap()`; a `needs-login` with reason `rejected` opens `<DialogConfigure dismissable />` when no dialog is up (`no-key` is ignored — a non-gateway setup, or the gate's own case); reason `expired` (SSO refresh token dead, SSO-minted key) sets a `sessionExpired` signal that the configure-gate invariant also traps on (`shouldOpenConfigureGate({ ..., sessionExpired })`), opening a non-dismissable `<DialogConfigure expired />` with the \"sign-in has expired\" notice until an SSO session is stored again (`loadAuth()` truthy once the dialog stack empties clears the signal) | Tab title branding; first-run setup is a forced gate the user can't escape into an unconfigured chat (the invariant reopens it), and so is an expired SSO session (otherwise the leftover gateway key keeps chat usable with no signed-in account); `codev` starts directly in the session layout instead of the home screen; a stray Ctrl+C no longer quits on the first press. | Keep our strings, the invariant gate effect, dialog swap + command block, route seed, `openNewSession`/`findEmptySession` + call sites, the `-c` default-title filter, and the `app.exit.confirm` command + binding; take upstream's surrounding changes. |",
-      "evidence": "Requires porting Codev module or consumer wiring"
+      "evidence": "Forced first-run /configure gate and CC terminal titles ported; key pre-flight, expired-session gate, home-screen skip and exit confirm remain"
     },
     {
       "id": "v1-053",
@@ -465,9 +465,9 @@
     },
     {
       "id": "v1-078",
-      "status": "port",
+      "status": "covered",
       "sourceRow": "| `packages/tui/src/component/dialog-provider.tsx`, `packages/tui/src/component/dialog-model.tsx`, `packages/opencode/src/cli/cmd/providers.ts` | Filter `opencode`/`opencode-go` out of provider pickers and the `/model` dialog (model list + Favorites/Recent; the model dialog's opencode-first sort became a plain name sort) | Upstream's hosted offerings (Zen/Go) are detours for gateway users. | Keep our filters. |",
-      "evidence": "Requires porting Codev module or consumer wiring"
+      "evidence": "Connect menu filters opencode/opencode-go (dialog-integration.tsx); free hosted models disabled via OPENCODE_DISABLE_FREE_MODELS (cli index.ts)"
     },
     {
       "id": "v1-079",
@@ -483,9 +483,9 @@
     },
     {
       "id": "v1-081",
-      "status": "drop",
+      "status": "covered",
       "sourceRow": "| `packages/tui/src/component/use-connected.tsx`, `packages/tui/src/context/local.tsx` | use-connected.tsx: the provider predicate is extracted into an exported `isConnectedProvider`; `useConnected` now delegates to it (same logic). local.tsx: `fallbackModel`'s last resort is `sync.data.provider.find(isConnectedProvider) ?? sync.data.provider[0]` instead of a blind `sync.data.provider[0]` (covered by fork-only `test/component/use-connected.test.ts`, not tracked here). | The hosted Zen provider self-registers (free models need no auth) and is inserted ahead of config-only providers, so with no config `model` pin and empty recents (a fresh `codevhub install` — the pin was dropped in PR #142 / hub PR #221) the TUI defaulted to \"Big Pickle · OpenCode Zen\" and would send messages to upstream's hosted gateway instead of the configured one. Same predicate as `app.tsx`'s startup gate and the footer indicator; when no provider qualifies the old first-provider behavior is kept. | Keep the predicate export and the `find` fallback; take upstream's surrounding changes to either file. If upstream reworks `fallbackModel`, re-apply the connected-first selection to its last-resort branch. |",
-      "evidence": "Not applicable or intentionally not porting to v2 preview"
+      "evidence": "Free hosted models disabled via OPENCODE_DISABLE_FREE_MODELS, so no hosted free default model exists to fall back to"
     },
     {
       "id": "v1-082",

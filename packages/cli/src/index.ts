@@ -32,6 +32,11 @@ const noProxy = [
 process.env.NO_PROXY = noProxy
 process.env.no_proxy = noProxy
 
+// Codev: hide OpenCode's free hosted models (Zen / Go) so an unconfigured install has no model and lands on the
+// /configure gate instead of defaulting to a hosted free model (v1 parity). Set here because the TUI, `serve
+// --service` and the desktop's spawned service all start through this entry; an explicit value still wins.
+process.env.OPENCODE_DISABLE_FREE_MODELS ??= "1"
+
 ensurePluginRuntime()
 
 if (process.env.OPENCODE_SSH_ASKPASS_PORT) {

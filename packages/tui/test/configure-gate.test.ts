@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { BackendError } from "@codev/gateway"
-import { RETRIES, shouldOpenConfigure, withRetries } from "../src/util/configure-gate"
+import { RETRIES, shouldOpenConfigure, shouldOpenConfigureGate, withRetries } from "../src/util/configure-gate"
 
 const idle = { env: "1", route: "home", dialogs: 0, draft: undefined }
 
@@ -11,6 +11,13 @@ test("opens only for CODEV_CONFIGURE=1 on an idle home screen", () => {
   expect(shouldOpenConfigure({ ...idle, route: "session" })).toBe(false)
   expect(shouldOpenConfigure({ ...idle, dialogs: 1 })).toBe(false)
   expect(shouldOpenConfigure({ ...idle, draft: "hello" })).toBe(false)
+})
+
+test("the first-run gate opens only once the server reports no usable model and nothing is on screen", () => {
+  expect(shouldOpenConfigureGate({ models: 0, dialogs: 0 })).toBe(true)
+  expect(shouldOpenConfigureGate({ models: undefined, dialogs: 0 })).toBe(false)
+  expect(shouldOpenConfigureGate({ models: 3, dialogs: 0 })).toBe(false)
+  expect(shouldOpenConfigureGate({ models: 0, dialogs: 1 })).toBe(false)
 })
 
 test("withRetries recovers from transient failures and reports each retry", async () => {

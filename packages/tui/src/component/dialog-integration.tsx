@@ -105,10 +105,12 @@ export function DialogIntegration(
   const theme = useTheme().surface("dialog")
   const location = currentLocation.ref ?? data.location.default()
   // The MCP dialog signs its servers in through `integrationID`; the connect menu leaves them to it.
+  // Codev: the connect menu also hides OpenCode's hosted offerings (Zen / Go); users are on the Codev gateway via
+  // /configure (v1 parity). An explicit `integrationID` still reaches them.
   const integrations = createMemo(() =>
     integrationOptions(data.location.integration.list(location) ?? []).filter((integration) =>
       props.integrationID === undefined
-        ? integration.metadata?.source !== "mcp"
+        ? integration.metadata?.source !== "mcp" && integration.id !== "opencode" && integration.id !== "opencode-go"
         : integration.id === props.integrationID,
     ),
   )

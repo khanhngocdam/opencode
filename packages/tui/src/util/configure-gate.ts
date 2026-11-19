@@ -17,6 +17,15 @@ export function shouldOpenConfigure(input: {
 }
 
 /**
+ * Whether the forced first-run gate should (re)open the configure dialog: the server has answered with no usable
+ * model and nothing else is on screen. `models` is undefined until the list has loaded, which never opens the gate.
+ * OpenCode's free hosted models are disabled for Codev2, so an empty list means nothing has been set up yet.
+ */
+export function shouldOpenConfigureGate(input: { models: number | undefined; dialogs: number }) {
+  return input.models === 0 && input.dialogs === 0
+}
+
+/**
  * Retries a transient network step up to `RETRIES` times, reporting each retry. A key refusal is a policy
  * answer rather than a flaky network, so it is thrown immediately for the caller's manual fallback.
  */

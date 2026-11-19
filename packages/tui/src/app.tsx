@@ -72,7 +72,7 @@ import { DialogDebug } from "./component/dialog-debug"
 import { DialogPair } from "./component/dialog-pair"
 import { DialogHighlights } from "./component/dialog-highlights"
 import { DialogConfigure } from "./component/dialog-configure"
-import { shouldOpenConfigure } from "./util/configure-gate"
+import { shouldOpenConfigure, shouldOpenConfigureGate } from "./util/configure-gate"
 import { claim } from "./util/highlights"
 import { DialogThemeList } from "./component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
@@ -744,6 +744,19 @@ function App() {
     dialog.replace(() => <DialogConfigure />)
   })
 
+  // Codev: first-run setup is a forced gate (v1 parity). OpenCode's free hosted models are disabled
+  // (packages/cli/src/index.ts), so an install with no usable model reopens the configure dialog whenever no dialog is
+  // up: escaping any step bounces back here instead of into a chat that cannot send. A model from any source (the
+  // Codev gateway, another integration, env keys, config) releases it; quitting still works. `CODEV_CONFIGURE_GATE=0`
+  // turns it off (the TUI test preload sets it, since app fixtures have no models).
+  createEffect(() => {
+    if (!plugins.ready() || client.connection.status() !== "connected") return
+    if (process.env.CODEV_CONFIGURE_GATE === "0") return
+    if (process.env.OPENCODE_DRIVE || process.env.OPENCODE_STORY || process.env.OPENCODE_ROUTE) return
+    if (!shouldOpenConfigureGate({ models: data.location.model.list()?.length, dialogs: dialog.stack.length })) return
+    dialog.replace(() => <DialogConfigure />)
+  })
+
   // Opens the release highlights once after an update, but only into an idle home screen during startup.
   const storage = useStorage()
   const paths = useTuiPaths()
@@ -1090,7 +1103,7 @@ function App() {
         ? [
             {
               name: "opencode.update",
-              title: "Update OpenCode",
+              title: "Update Codev Code 2.0",
               slash: { name: "update" },
               run: () => updater.open?.("manual"),
               category: "System",
