@@ -38,7 +38,10 @@ describe("normalizeGatewayBaseUrl", () => {
 })
 
 const PACKAGE = "@opencode/ai/providers/openai-compatible"
-const imageCapabilities = { input: ["text", "image"], output: ["text"] }
+const imageCapabilities: { input: ("text" | "image")[]; output: ("text" | "image")[] } = {
+  input: ["text", "image"],
+  output: ["text"],
+}
 
 describe("buildGatewayConfig", () => {
   test("matches the v2 provider config shape", () => {

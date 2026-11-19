@@ -5,14 +5,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --no-script",
+    "typecheck:tsc": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
     "jsonc-parser": "3.3.1"
   },
   "devDependencies": {
-    "@types/bun": "catalog:"
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts"

@@ -227,7 +227,9 @@
         "jsonc-parser": "3.3.1",
       },
       "devDependencies": {
+        "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
+        "@typescript/native": "catalog:",
       },
     },
     "packages/codev-sandbox": {
@@ -250,6 +252,7 @@
         "@tsconfig/bun": "catalog:",
         "@types/adm-zip": "0.5.7",
         "@types/bun": "catalog:",
+        "@typescript/native": "catalog:",
       },
     },
     "packages/codev-upload": {
@@ -262,6 +265,7 @@
       "devDependencies": {
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
+        "@typescript/native": "catalog:",
       },
     },
     "packages/core": {

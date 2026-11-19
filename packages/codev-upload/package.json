@@ -5,7 +5,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --no-script",
+    "typecheck:tsc": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
@@ -14,7 +15,8 @@
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
-    "@types/bun": "catalog:"
+    "@types/bun": "catalog:",
+    "@typescript/native": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts",
