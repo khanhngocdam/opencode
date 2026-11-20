@@ -157,13 +157,10 @@ async function publish(packageDir: string, name: string, version: string) {
   }
   await $`bun pm pack`.cwd(packageDir)
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
-    if (
-      (
-        await $`npm publish *.tgz --access public --tag ${Script.channel} --fetch-timeout=1800000`
-          .cwd(packageDir)
-          .nothrow()
-      ).exitCode === 0
-    ) {
+    const result = await $`npm publish *.tgz --access public --tag ${Script.channel} --fetch-timeout=1800000`
+      .cwd(packageDir)
+      .nothrow()
+    if (result.exitCode === 0) {
       console.log(`published ${name}@${version}`)
       return
     }
@@ -171,6 +168,10 @@ async function publish(packageDir: string, name: string, version: string) {
       console.log(`published ${name}@${version} despite the error above`)
       return
     }
+    // A rate limit (E429) or an auth refusal (E403) does not clear on retry; re-uploading ~120 MB five times only
+    // wastes bandwidth. Stop here: a later rerun skips what is already published and resumes with this package.
+    const refusal = `${result.stdout}${result.stderr}`.match(/\bE(429|403)\b/)?.[0]
+    if (refusal) throw new Error(`npm refused ${name}@${version} (${refusal}); rerun later to resume`)
     if (attempt === ATTEMPTS) throw new Error(`failed to publish ${name}@${version} after ${ATTEMPTS} attempts`)
     console.log(`retrying ${name}@${version} (attempt ${attempt + 1}/${ATTEMPTS})`)
     await Bun.sleep(attempt * 10_000)
