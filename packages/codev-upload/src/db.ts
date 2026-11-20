@@ -4,6 +4,7 @@ import { openSessionDb, type SessionDb } from "#sqlite"
 import { networkVolumeFilter } from "./network"
 import { projectFolderName, sessionDbPath } from "./paths"
 import { buildSessionStats, type SessionStats, type StatsMessage } from "./stats"
+import { toStatsMessage } from "./server-source"
 import type { Message, Session } from "./types"
 
 // Session-store reader: a port of the hub's OpenCode provider
@@ -173,16 +174,16 @@ export function readAllSessions(dbPath = sessionDbPath()): Session[] {
 // push's local source. Subagent sessions are not reported on their own; their
 // messages roll up into the session that spawned them. Project dirs on a
 // network volume are named without resolving them (see network.ts).
-export function readAllSessionStats(
-  dbPath = sessionDbPath(),
-  onNetworkVolume = networkVolumeFilter(),
-): SessionStats[] {
+export function readAllSessionStats(dbPath = sessionDbPath(), onNetworkVolume = networkVolumeFilter()): SessionStats[] {
   if (!existsSync(dbPath)) return []
   const db = openSessionDb(dbPath)
   try {
     const worktrees = readWorktrees(db)
+    if (hasTable(db, "session_v2")) return readV2SessionStats(db, worktrees, onNetworkVolume)
     const hasParentId = sessionHasParentId(db)
-    const rows = db.prepare<SessionRow>(`SELECT ${sessionColumns(hasParentId)} FROM session ORDER BY time_created`).all()
+    const rows = db
+      .prepare<SessionRow>(`SELECT ${sessionColumns(hasParentId)} FROM session ORDER BY time_created`)
+      .all()
     const childrenOf = new Map<string, string[]>()
     for (const row of rows) {
       if (!row.parent_id) continue
@@ -218,9 +219,10 @@ export function readAllSessionStats(
 function readStatsMessages(db: SessionDb, sessionId: string): StatsMessage[] {
   const parts = new Map<string, unknown[]>()
   for (const row of db
-    .prepare<{ message_id: string; data: string }>(
-      "SELECT message_id, data FROM part WHERE session_id = ? ORDER BY time_created",
-    )
+    .prepare<{
+      message_id: string
+      data: string
+    }>("SELECT message_id, data FROM part WHERE session_id = ? ORDER BY time_created")
     .all(sessionId)) {
     const part = safeParse<unknown>(row.data)
     if (part) parts.set(row.message_id, [...(parts.get(row.message_id) ?? []), part])
@@ -230,6 +232,62 @@ function readStatsMessages(db: SessionDb, sessionId: string): StatsMessage[] {
     if (!info) return []
     return [{ info: { ...info, time: info.time ?? { created: msg.time_created } }, parts: parts.get(msg.id) ?? [] }]
   })
+}
+
+// Codev2 keeps sessions in the v2 tables. A `session_message` row holds the same projected message the server API
+// returns (`type` column plus JSON `data`), so the API mapper turns it into stats input.
+function readV2SessionStats(
+  db: SessionDb,
+  worktrees: Map<string, string>,
+  onNetworkVolume: (path: string) => boolean,
+): SessionStats[] {
+  const rows = db
+    .prepare<SessionRow>(
+      "SELECT id, project_id, title, directory, parent_id, time_created, time_updated FROM session_v2 ORDER BY time_created",
+    )
+    .all()
+  const childrenOf = new Map<string, string[]>()
+  for (const row of rows) {
+    if (!row.parent_id) continue
+    childrenOf.set(row.parent_id, [...(childrenOf.get(row.parent_id) ?? []), row.id])
+  }
+  const descendantsOf = (id: string): string[] =>
+    (childrenOf.get(id) ?? []).flatMap((child) => [child, ...descendantsOf(child)])
+  const messages = (sessionID: string) =>
+    db
+      .prepare<{ type: string; data: string }>(
+        "SELECT type, data FROM session_message WHERE session_id = ? ORDER BY seq",
+      )
+      .all(sessionID)
+      .flatMap((row) => {
+        const data = safeParse<Record<string, unknown>>(row.data)
+        const message = data ? toStatsMessage({ ...data, type: row.type }) : undefined
+        return message ? [message] : []
+      })
+  return rows.flatMap((row) => {
+    if (row.parent_id) return []
+    const projectDir = sessionProjectDir(row, worktrees)
+    if (!projectDir) return []
+    try {
+      const stats = buildSessionStats({
+        id: row.id,
+        origin: "local",
+        project: projectFolderName(projectDir, { resolve: !onNetworkVolume(projectDir) }),
+        messages: messages(row.id),
+        descendants: descendantsOf(row.id).map(messages),
+      })
+      return stats ? [stats] : []
+    } catch {
+      return []
+    }
+  })
+}
+
+function hasTable(db: SessionDb, name: string) {
+  return (
+    db.prepare<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").all(name).length >
+    0
+  )
 }
 
 function readWorktrees(db: SessionDb): Map<string, string> {

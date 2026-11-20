@@ -15,11 +15,11 @@ const roots: string[] = []
 afterEach(() => roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true })))
 
 // Builds the Codev updater against a fixture filesystem layout. `installed` places the running binary inside an npm
-// global `codev2.0-code` package; otherwise it is the test runner itself, like a source checkout.
+// global `codev2-code` package; otherwise it is the test runner itself, like a source checkout.
 async function fixture(input: { installed: boolean; installName?: string }) {
   const root = mkdtempSync(path.join(tmpdir(), "codev2-updater-"))
   roots.push(root)
-  const packageDirectory = path.join(root, "prefix", "node_modules", input.installName ?? "codev2.0-code")
+  const packageDirectory = path.join(root, "prefix", "node_modules", input.installName ?? "codev2-code")
   const executable = path.join(packageDirectory, "bin", "codev2.exe")
   const manifest = path.join(packageDirectory, "package.json")
   mkdirSync(path.dirname(executable), { recursive: true })
@@ -27,7 +27,7 @@ async function fixture(input: { installed: boolean; installName?: string }) {
   writeFileSync(
     manifest,
     JSON.stringify({
-      name: input.installName ?? "codev2.0-code",
+      name: input.installName ?? "codev2-code",
       version: "2.3.0-2",
       bin: { codev2: "./bin/codev2.exe" },
     }),
@@ -69,13 +69,13 @@ async function fixture(input: { installed: boolean; installName?: string }) {
                 const args = command.args.map(String)
                 commands.push([command.command, ...args])
                 // A successful install replaces the package the running binary belongs to.
-                const target = args.find((arg) => arg.startsWith("codev2.0-code@"))
+                const target = args.find((arg) => arg.startsWith("codev2-code@"))
                 if (target)
                   writeFileSync(
                     manifest,
                     JSON.stringify({
-                      name: "codev2.0-code",
-                      version: target.slice("codev2.0-code@".length),
+                      name: "codev2-code",
+                      version: target.slice("codev2-code@".length),
                       bin: { codev2: "./bin/codev2.exe" },
                     }),
                   )
@@ -115,32 +115,32 @@ test("a source checkout or another package is never detected, updated, or remove
       }),
     )
     expect(result.method).toBeUndefined()
-    expect(result.check).toEqual({ type: "unavailable", message: "Update with: npm i -g codev2.0-code@latest" })
+    expect(result.check).toEqual({ type: "unavailable", message: "Update with: npm i -g codev2-code@latest" })
     expect(result.run).toBeUndefined()
-    expect(result.apply.message).toContain("npm i -g codev2.0-code@latest")
+    expect(result.apply.message).toContain("npm i -g codev2-code@latest")
     expect(result.removal.every((item) => item === undefined)).toBe(true)
     expect(setup.commands.filter((command) => command.includes("install"))).toEqual([])
   }
 })
 
-test("an npm install of codev2.0-code upgrades only that package and verifies the new version", async () => {
+test("an npm install of codev2-code upgrades only that package and verifies the new version", async () => {
   const setup = await fixture({ installed: true })
   const method = await Effect.runPromise(setup.updater.method())
   expect(method).toBe("npm")
   await Effect.runPromise(setup.updater.upgrade("npm", "2.3.0-3"))
   const install = setup.commands.find((command) => command.includes("install"))
   expect(install).toBeDefined()
-  expect(install!.slice(-2)).toEqual(["--allow-scripts=codev2.0-code", "codev2.0-code@2.3.0-3"])
+  expect(install!.slice(-2)).toEqual(["--allow-scripts=codev2-code", "codev2-code@2.3.0-3"])
   expect(install!.join(" ")).not.toMatch(/opencode|codev-code@/)
 })
 
-test("upstream install methods cannot update codev2.0-code", async () => {
+test("upstream install methods cannot update codev2-code", async () => {
   const setup = await fixture({ installed: true })
   const error = await Effect.runPromise(setup.updater.upgrade("brew", "2.3.0-3").pipe(Effect.flip))
-  expect(error.message).toContain("npm i -g codev2.0-code@latest")
+  expect(error.message).toContain("npm i -g codev2-code@latest")
 })
 
-test("latest reads the channel dist-tag of codev2.0-code from npm's own registry", async () => {
+test("latest reads the channel dist-tag of codev2-code from npm's own registry", async () => {
   const setup = await fixture({ installed: true })
   const requests: string[] = []
   const request = spyOn(globalThis, "fetch").mockImplementation(
@@ -157,5 +157,5 @@ test("latest reads the channel dist-tag of codev2.0-code from npm's own registry
   } finally {
     request.mockRestore()
   }
-  expect(requests).toEqual(["https://registry.example.test/codev2.0-code/local"])
+  expect(requests).toEqual(["https://registry.example.test/codev2-code/local"])
 })

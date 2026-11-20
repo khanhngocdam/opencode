@@ -11,7 +11,7 @@ import { Updater } from "./updater"
 import { action, parseReleaseVersion } from "./updater-action"
 import { errorMessage } from "../util/error"
 
-// Codev (v1 parity): updates come from the npm package `codev2.0-code` and only ever touch that package, never an
+// Codev (v1 parity): updates come from the npm package `codev2-code` and only ever touch that package, never an
 // OpenCode or Codev v1 install. The TUI asks before installing; with `autoupdate: true` (or `update: "auto"`) a
 // same-minor release such as 2.3.0-2 → 2.3.0-3 or 2.3.1 installs by itself, and anything larger still asks.
 

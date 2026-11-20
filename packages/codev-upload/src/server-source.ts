@@ -23,7 +23,7 @@ interface ApiSessionInfo {
 interface ApiMessage {
   type?: string
   agent?: string
-  model?: { providerID?: string; modelID?: string } | string
+  model?: { providerID?: string; modelID?: string; id?: string } | string
   cost?: number
   tokens?: { input?: number; output?: number; reasoning?: number; cache?: { read?: number; write?: number } }
   time?: { created?: number; completed?: number }
@@ -109,7 +109,7 @@ export function toStatsMessage(message: ApiMessage): StatsMessage | undefined {
   const model =
     typeof message.model === "string"
       ? { modelID: message.model, providerID: undefined }
-      : { modelID: message.model?.modelID, providerID: message.model?.providerID }
+      : { modelID: message.model?.modelID ?? message.model?.id, providerID: message.model?.providerID }
   return {
     info: {
       role: "assistant",

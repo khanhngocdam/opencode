@@ -35,7 +35,7 @@ These v1 inventory rows are classified as covered by the Codev2 identity work
   on a refused key), sign-in nudge, stats push spawned at TUI/`run`/`mini` launch, OpenCode Zen/Go hidden from
   `auth login/list`, custom OpenAI-compatible provider in `/configure`, `codev2 codegraph enable|disable|status`,
   `codev2` in user-facing command hints. Unit-tested; not yet exercised against the live gateway.
-- CLI updates (v1 parity): npm `codev2.0-code` dist-tag check, TUI notification and `/update`, `codev2 upgrade`;
+- CLI updates (v1 parity): npm `codev2-code` dist-tag check, TUI notification and `/update`, `codev2 upgrade`;
   silent same-minor install only under `autoupdate: true`. Not yet verified with a real npm release on Windows.
 - Not ported yet: a real v1 session import (`migrate-v1`
   only stages a snapshot and stays dev-only), desktop gateway SSO/configure gate, and the desktop-only sandbox (Work).
@@ -103,5 +103,5 @@ bun run pack
 # npm (requires npm login; dist already built → --skip-build)
 cd ../cli
 bun run release -- --skip-build
-# users: npm i -g codev2.0-code && codev2
+# users: npm i -g codev2-code && codev2
 ```

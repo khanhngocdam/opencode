@@ -7,7 +7,7 @@
 </p>
 <p align="center"><b>Codev Code 2.0</b> — the CoDev AI coding agent, built on OpenCode.</p>
 <p align="center">
-  <a href="https://www.npmjs.com/package/codev2.0-code"><img alt="npm" src="https://img.shields.io/npm/v/codev2.0-code?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/codev2-code"><img alt="npm" src="https://img.shields.io/npm/v/codev2-code?style=flat-square" /></a>
 </p>
 
 ---
@@ -15,13 +15,13 @@
 ### Installation
 
 ```bash
-npm i -g codev2.0-code     # or bun/pnpm/yarn
+npm i -g codev2-code     # or bun/pnpm/yarn
 codev2 --version
 ```
 
 Codev Code 2.0 installs the `codev2` command. It runs alongside Codev v1 (`codev`) and OpenCode without touching them: its data directory, background service, credentials and desktop identity are all separate.
 
-Updates are manual: install the newer release with `npm i -g codev2.0-code@latest`.
+Updates are manual: install the newer release with `npm i -g codev2-code@latest`.
 
 ### Getting started
 

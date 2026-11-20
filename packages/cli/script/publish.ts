@@ -49,7 +49,8 @@ for (const filepath of new Bun.Glob("cli-*/package.json").scanSync({ cwd: dist }
 }
 
 const versions = new Set(Object.values(binaries))
-if (versions.size !== 1) throw new Error(`Expected one CLI version in dist/, found ${[...versions].join(", ") || "none"}`)
+if (versions.size !== 1)
+  throw new Error(`Expected one CLI version in dist/, found ${[...versions].join(", ") || "none"}`)
 const version = versions.values().next().value!
 if (version !== Script.version) throw new Error(`dist/ is ${version}, expected ${Script.version}`)
 
@@ -123,12 +124,15 @@ await Bun.write(
   ),
 )
 
-const tasks = Object.entries(dirs).map(([name, packageDir]) => publish(packageDir, name, binaries[name]!))
-await Promise.all(tasks)
+// One upload at a time: the binaries are ~120 MB each, and parallel uploads over a slow uplink each stall past npm's
+// fetch timeout (every package then fails together). Already-published packages are skipped, so a rerun resumes.
+for (const [name, packageDir] of Object.entries(dirs)) await publish(packageDir, name, binaries[name]!)
 await publish(wrapper, PACKAGE_NAME, version)
 
 console.log(`\nPublished ${PACKAGE_NAME}@${version} (dist-tag: ${Script.channel})`)
-console.log(`Verify: npm view ${PACKAGE_NAME}@${version} && npm install -g ${PACKAGE_NAME} && ${COMMAND_NAME} --version`)
+console.log(
+  `Verify: npm view ${PACKAGE_NAME}@${version} && npm install -g ${PACKAGE_NAME} && ${COMMAND_NAME} --version`,
+)
 
 async function stageBinary(packageDir: string, windows: boolean) {
   const bin = path.join(packageDir, "bin")
@@ -153,7 +157,13 @@ async function publish(packageDir: string, name: string, version: string) {
   }
   await $`bun pm pack`.cwd(packageDir)
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
-    if ((await $`npm publish *.tgz --access public --tag ${Script.channel}`.cwd(packageDir).nothrow()).exitCode === 0) {
+    if (
+      (
+        await $`npm publish *.tgz --access public --tag ${Script.channel} --fetch-timeout=1800000`
+          .cwd(packageDir)
+          .nothrow()
+      ).exitCode === 0
+    ) {
       console.log(`published ${name}@${version}`)
       return
     }
