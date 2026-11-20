@@ -18,9 +18,8 @@ export function request<A>(run: (signal: AbortSignal) => Promise<A>) {
 export const loadIntegrations = Effect.fn("cli.auth.integrations")(function* (client: OpenCodeClient) {
   yield* waitForPlugins(client, location.directory)
   return yield* request((signal) => client.integration.list({ location }, { signal })).pipe(
-    Effect.map((response) =>
-      response.data.toSorted((a, b) => Number(b.id === "opencode-go") - Number(a.id === "opencode-go")),
-    ),
+    // Codev: OpenCode's hosted Zen and Go are not offered (v1 parity); /connect hides them the same way.
+    Effect.map((response) => response.data.filter((item) => item.id !== "opencode" && item.id !== "opencode-go")),
   )
 })
 

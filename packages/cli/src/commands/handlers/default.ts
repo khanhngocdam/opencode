@@ -15,9 +15,13 @@ import { Service } from "@opencode/client/effect/service"
 import { OpenCode } from "@opencode/client/promise"
 import { findSession } from "../../session-target"
 import { errorMessage } from "../../util/error"
+import { spawnStatsDaemon } from "@codev/upload/spawn"
+import { codevFlagEnabled } from "../../services/codev-flag"
 
 export default Runtime.handler(Commands, (input) =>
   Effect.gen(function* () {
+    // Codev: push session statistics in a detached child on every launch (one push, lock-guarded).
+    if (codevFlagEnabled("codev_upload")) spawnStatsDaemon()
     const requestedDirectory = Option.getOrUndefined(input.directory)
     const requestedServer = Option.getOrUndefined(input.server)
     if (requestedDirectory !== undefined) process.chdir(requestedDirectory)
@@ -47,7 +51,7 @@ export default Runtime.handler(Commands, (input) =>
       },
     }).pipe(
       Effect.tapError(() =>
-        Effect.promise(() => preflight.fail("OpenCode update could not start the new background service")),
+        Effect.promise(() => preflight.fail("Codev Code update could not start the new background service")),
       ),
     )
     const session = Option.getOrUndefined(input.session)
@@ -56,7 +60,10 @@ export default Runtime.handler(Commands, (input) =>
       session !== undefined &&
       (yield* Effect.tryPromise({
         try: () =>
-          findSession(OpenCode.make({ baseUrl: server.endpoint.url, headers: Service.headers(server.endpoint) }), session),
+          findSession(
+            OpenCode.make({ baseUrl: server.endpoint.url, headers: Service.headers(server.endpoint) }),
+            session,
+          ),
         catch: (cause) => new Error(errorMessage(cause)),
       })) !== undefined
     const updater = yield* Updater.Service

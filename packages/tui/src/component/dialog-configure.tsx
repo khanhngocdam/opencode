@@ -1,4 +1,5 @@
 import {
+  buildCustomProviderConfig,
   buildGatewayConfig,
   fetchApiKey,
   fetchCodevConfig,
@@ -11,6 +12,7 @@ import {
   loadGatewayUrl,
   login,
   mergeConfigFragment,
+  providerFromName,
   saveApiKey,
   saveCodevConfig,
   silentSso,
@@ -84,6 +86,13 @@ export function DialogConfigure(props: { expired?: boolean } = {}) {
           value: "provider",
           description: "Anthropic, OpenAI, and others",
           onSelect: () => ctx.dialog.replace(() => <DialogIntegration />),
+        },
+        {
+          title: "Custom provider",
+          value: "custom",
+          description: "Any OpenAI-compatible endpoint",
+          onSelect: () =>
+            void runCustomProviderFlow(ctx).catch((error: unknown) => failSetup(ctx, errorMessage(error))),
         },
       ]}
     />
@@ -202,15 +211,7 @@ async function configureGateway(ctx: FlowContext, creds: { apiKey: string; baseU
     process.env.OPENCODE_CONFIG_DIR ?? Global.Path.config,
     buildGatewayConfig({ baseUrl: creds.baseUrl, model: models[0], models }),
   )
-  const existing = ctx.data.location.integration.list()?.find((item) => item.id === GATEWAY_PROVIDER.id)
-  const previous = existing ? credentialConnections(existing) : []
-  await ctx.client.api.credential.create({
-    integrationID: GATEWAY_PROVIDER.id,
-    label: "CoDev gateway",
-    value: { type: "key", key: creds.apiKey },
-  })
-  // Reconfiguring replaces the earlier gateway key instead of piling up accounts.
-  await Promise.all(previous.map((connection) => ctx.client.api.credential.remove({ credentialID: connection.id })))
+  await replaceCredential(ctx, { integrationID: GATEWAY_PROVIDER.id, label: "CoDev gateway", key: creds.apiKey })
   // The hub-shared auth file keeps the key for the stats daemon and the hub; the config block stays keyless.
   saveApiKey({ apiKey: creds.apiKey, model: models[0] })
   // A fresh sign-in un-stalls the background stats push; send any backlog now. Detached, gated inside.
@@ -218,6 +219,54 @@ async function configureGateway(ctx: FlowContext, creds: { apiKey: string; baseU
 
   ctx.toast.show({ variant: "success", message: "Codev Code 2.0 configured. Choose a model." })
   ctx.dialog.replace(() => <DialogModel providerID={GATEWAY_PROVIDER.id} />)
+}
+
+// v1 parity: a user-named OpenAI-compatible provider. Its config block is keyless like the gateway's; the key is a v2
+// credential for the integration the block creates. Reserved ids would overwrite the gateway or a hidden provider.
+async function runCustomProviderFlow(ctx: FlowContext) {
+  const name = await ask(ctx.dialog, "Provider name", { placeholder: "My Gateway" })
+  if (!name) return
+  const provider = providerFromName(name)
+  if ([GATEWAY_PROVIDER.id, "opencode", "opencode-go"].includes(provider.id))
+    return failSetup(ctx, `"${provider.id}" is reserved; choose another provider name`)
+  const baseUrl = await ask(ctx.dialog, "Base URL", { placeholder: "https://gateway.example.com" })
+  if (!baseUrl) return
+  const apiKey = await ask(ctx.dialog, "API Key", { placeholder: "sk-..." })
+  if (!apiKey) return
+
+  const [status, report] = createSignal("Fetching models...")
+  ctx.dialog.replace(() => <StatusView status={status} />)
+  const models = await withRetries("Fetching models", report, () => fetchModels(apiKey, baseUrl)).catch(
+    (error: unknown) => {
+      failSetup(ctx, `couldn't fetch models after ${RETRIES} retries: ${errorMessage(error)}`)
+    },
+  )
+  if (!models) return
+  if (models.length === 0) return failSetup(ctx, "the provider returned no models")
+
+  report("Applying configuration...")
+  mergeConfigFragment(
+    process.env.OPENCODE_CONFIG_DIR ?? Global.Path.config,
+    buildCustomProviderConfig({ providerID: provider.id, name: provider.name, baseUrl, models }),
+  )
+  await replaceCredential(ctx, { integrationID: provider.id, label: provider.name, key: apiKey })
+  ctx.toast.show({ variant: "success", message: `${provider.name} added. Choose a model.` })
+  ctx.dialog.replace(() => <DialogModel providerID={provider.id} />)
+}
+
+/** Stores `key` as the integration's credential and removes the earlier ones, so a new key never piles up accounts. */
+export async function replaceCredential(
+  ctx: Pick<FlowContext, "client" | "data">,
+  input: { integrationID: string; label: string; key: string },
+) {
+  const existing = ctx.data.location.integration.list()?.find((item) => item.id === input.integrationID)
+  const previous = existing ? credentialConnections(existing) : []
+  await ctx.client.api.credential.create({
+    integrationID: input.integrationID,
+    label: input.label,
+    value: { type: "key", key: input.key },
+  })
+  await Promise.all(previous.map((connection) => ctx.client.api.credential.remove({ credentialID: connection.id })))
 }
 
 function failSetup(ctx: FlowContext, message: string) {
@@ -287,9 +336,7 @@ function SsoView(props: {
               </>
             )}
           </Show>
-          <Show when={props.pasteError()}>
-            {(error) => <text fg={theme.text.feedback.error.base}>{error()}</text>}
-          </Show>
+          <Show when={props.pasteError()}>{(error) => <text fg={theme.text.feedback.error.base}>{error()}</text>}</Show>
         </box>
       )}
     />

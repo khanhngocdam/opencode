@@ -2,9 +2,13 @@ import { Effect, Option } from "effect"
 import { Commands } from "../commands"
 import { Runtime } from "../../framework/runtime"
 import { ServerConnection } from "../../services/server-connection"
+import { spawnStatsDaemon } from "@codev/upload/spawn"
+import { codevFlagEnabled } from "../../services/codev-flag"
 
 export default Runtime.handler(Commands.commands.run, (input) =>
   Effect.gen(function* () {
+    // Codev: push session statistics in a detached child on every launch (one push, lock-guarded).
+    if (codevFlagEnabled("codev_upload")) spawnStatsDaemon()
     const { reportRunError, runNonInteractive } = yield* Effect.promise(() => import("../../run/run"))
     // A one-off run uses the background service when it is already up, but never leaves a new one running.
     const server = yield* ServerConnection.resolve({ autostart: false }).pipe(

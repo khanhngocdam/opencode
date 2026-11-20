@@ -47,7 +47,10 @@ const PermissionParams = {
 }
 
 const SkillInstallParams = {
-  dir: Flag.String("dir").pipe(Flag.withDescription("Install into this directory instead of an agent's"), Flag.optional),
+  dir: Flag.String("dir").pipe(
+    Flag.withDescription("Install into this directory instead of an agent's"),
+    Flag.optional,
+  ),
   global: Flag.Boolean("global").pipe(
     Flag.withDescription("Install into the user-level skills directories instead of the project's"),
     Flag.withDefault(false),
@@ -82,7 +85,7 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
   },
   commands: [
     Spec.make("upgrade", {
-      description: "Show Codev2 preview upgrade availability",
+      description: "Upgrade Codev Code 2.0 from npm",
       aliases: ["update"],
       params: {
         target: Argument.String("target").pipe(
@@ -221,7 +224,21 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
       },
     }),
     Spec.make("codegraph", {
-      description: "Show how to enable the CodeGraph MCP server",
+      description: "Enable, disable, or inspect the CodeGraph MCP server",
+      commands: [
+        Spec.make("enable", {
+          description: "Install CodeGraph if needed and add its MCP server to the global config",
+          params: {
+            yes: Flag.Boolean("yes").pipe(
+              Flag.withAlias("y"),
+              Flag.withDescription("Index the current project without asking"),
+              Flag.withDefault(false),
+            ),
+          },
+        }),
+        Spec.make("disable", { description: "Remove the CodeGraph MCP server from the global config" }),
+        Spec.make("status", { description: "Show whether CodeGraph is installed, configured, and indexed here" }),
+      ],
     }),
     Spec.make("migrate-v1", {
       description: "Import Codev v1 data into Codev2 (opt-in; v1 data is never modified)",

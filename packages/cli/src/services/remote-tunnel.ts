@@ -42,7 +42,7 @@ export const run = Effect.fnUntraced(function* (input: {
     Effect.catchCause((cause) =>
       Cause.hasInterruptsOnly(cause)
         ? Effect.failCause(cause)
-        : Effect.logError("remote access tunnel stopped; run `opencode service set remote true` to retry", { cause }),
+        : Effect.logError("remote access tunnel stopped; run `codev2 service set remote true` to retry", { cause }),
     ),
   )
 })
@@ -60,7 +60,8 @@ export const ensure = Effect.fnUntraced(function* () {
     Effect.provide(OpenTunnelClient.layer()),
     Effect.timeoutOrElse({
       duration: "5 minutes",
-      orElse: () => Effect.fail(new Error("Timed out creating the remote access tunnel; run the command again to resume")),
+      orElse: () =>
+        Effect.fail(new Error("Timed out creating the remote access tunnel; run the command again to resume")),
     }),
   )
 })

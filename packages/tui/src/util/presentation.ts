@@ -14,10 +14,10 @@ export function epilogue(input: { readonly session?: SessionEpilogue; readonly u
     ...ansiWordmark("  "),
     "",
     ...(input.updatedVersion
-      ? [`  ${dim}Run ${reset}${bold}opencode${reset}${dim} to use ${reset}${bold}${input.updatedVersion}${reset}`, ""]
+      ? [`  ${dim}Run ${reset}${bold}codev2${reset}${dim} to use ${reset}${bold}${input.updatedVersion}${reset}`, ""]
       : []),
     ...(input.session
-      ? [row("Session", input.session.title), row("Continue", `opencode -s ${input.session.sessionID}`), ""]
+      ? [row("Session", input.session.title), row("Continue", `codev2 -s ${input.session.sessionID}`), ""]
       : []),
   ].join("\n")
 }

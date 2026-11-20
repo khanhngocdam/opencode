@@ -6,6 +6,7 @@ import { Updater } from "../../services/updater"
 import { handlePromptErrors } from "../../ui/prompt"
 import { OPENCODE_VERSION } from "../../version"
 import { stripVTControlCharacters } from "node:util"
+import { PACKAGE_NAME } from "@codev/brand"
 
 export default Runtime.handler(
   Commands.commands.upgrade,
@@ -17,14 +18,16 @@ export default Runtime.handler(
       if (!method)
         return yield* Effect.fail(
           (yield* updater.managed(Option.getOrUndefined(input.target))) ??
-            new Error("Could not detect the installation method. Pass --method to choose how to upgrade OpenCode."),
+            new Error(
+              `Could not detect how Codev Code 2.0 was installed. Update with: npm i -g ${PACKAGE_NAME}@latest`,
+            ),
         )
 
       log.info(`Using method: ${method}`)
       const target = Option.getOrUndefined(input.target) ?? (yield* updater.latest(method))
       const version = target.trim().replace(/^v/, "")
       if (version === OPENCODE_VERSION) {
-        log.warn(`OpenCode upgrade skipped: ${version} is already installed`)
+        log.warn(`Codev Code upgrade skipped: ${version} is already installed`)
         outro("Done")
         return
       }

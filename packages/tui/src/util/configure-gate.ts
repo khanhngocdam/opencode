@@ -20,9 +20,11 @@ export function shouldOpenConfigure(input: {
  * Whether the forced first-run gate should (re)open the configure dialog: the server has answered with no usable
  * model and nothing else is on screen. `models` is undefined until the list has loaded, which never opens the gate.
  * OpenCode's free hosted models are disabled for Codev2, so an empty list means nothing has been set up yet.
+ * `expired` (the startup key check found the SSO session dead) forces the gate even when models are listed, since
+ * their gateway key can no longer be trusted.
  */
-export function shouldOpenConfigureGate(input: { models: number | undefined; dialogs: number }) {
-  return input.models === 0 && input.dialogs === 0
+export function shouldOpenConfigureGate(input: { models: number | undefined; dialogs: number; expired?: boolean }) {
+  return (input.models === 0 || input.expired === true) && input.dialogs === 0
 }
 
 /**

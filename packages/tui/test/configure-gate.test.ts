@@ -20,14 +20,25 @@ test("the first-run gate opens only once the server reports no usable model and 
   expect(shouldOpenConfigureGate({ models: 0, dialogs: 1 })).toBe(false)
 })
 
+test("an expired SSO session forces the gate even with models listed, but never over another dialog", () => {
+  expect(shouldOpenConfigureGate({ models: 3, dialogs: 0, expired: true })).toBe(true)
+  expect(shouldOpenConfigureGate({ models: undefined, dialogs: 0, expired: true })).toBe(true)
+  expect(shouldOpenConfigureGate({ models: 3, dialogs: 1, expired: true })).toBe(false)
+  expect(shouldOpenConfigureGate({ models: 3, dialogs: 0, expired: false })).toBe(false)
+})
+
 test("withRetries recovers from transient failures and reports each retry", async () => {
   const statuses: string[] = []
   let calls = 0
-  const result = await withRetries("Fetching", (text) => statuses.push(text), async () => {
-    calls++
-    if (calls < 3) throw new Error("flaky")
-    return "ok"
-  })
+  const result = await withRetries(
+    "Fetching",
+    (text) => statuses.push(text),
+    async () => {
+      calls++
+      if (calls < 3) throw new Error("flaky")
+      return "ok"
+    },
+  )
   expect(result).toBe("ok")
   expect(statuses).toEqual(["Fetching failed — retrying (1/3)...", "Fetching failed — retrying (2/3)..."])
 })
@@ -35,10 +46,14 @@ test("withRetries recovers from transient failures and reports each retry", asyn
 test("withRetries gives up after the retry budget", async () => {
   let calls = 0
   await expect(
-    withRetries("Fetching", () => {}, async () => {
-      calls++
-      throw new Error("down")
-    }),
+    withRetries(
+      "Fetching",
+      () => {},
+      async () => {
+        calls++
+        throw new Error("down")
+      },
+    ),
   ).rejects.toThrow("down")
   expect(calls).toBe(RETRIES + 1)
 })
@@ -47,10 +62,14 @@ test("withRetries does not retry a key refusal", async () => {
   let calls = 0
   const refusal = new BackendError("refused", 403, "domain not allowed", "key_refused")
   await expect(
-    withRetries("Fetching", () => {}, async () => {
-      calls++
-      throw refusal
-    }),
+    withRetries(
+      "Fetching",
+      () => {},
+      async () => {
+        calls++
+        throw refusal
+      },
+    ),
   ).rejects.toBe(refusal)
   expect(calls).toBe(1)
 })

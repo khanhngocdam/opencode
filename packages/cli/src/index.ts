@@ -62,7 +62,11 @@ const Handlers = Runtime.handlers(Commands, {
     office: () => import("./commands/handlers/skill/office"),
   },
   upload: () => import("./commands/handlers/upload"),
-  codegraph: () => import("./commands/handlers/codegraph"),
+  codegraph: {
+    enable: () => import("./commands/handlers/codegraph/enable"),
+    disable: () => import("./commands/handlers/codegraph/disable"),
+    status: () => import("./commands/handlers/codegraph/status"),
+  },
   "migrate-v1": () => import("./commands/handlers/migrate-v1"),
   acp: () => import("./commands/handlers/acp"),
   api: () => import("./commands/handlers/api"),

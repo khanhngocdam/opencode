@@ -75,7 +75,7 @@ describe("auth command", () => {
     expect(requests.indexOf("/api/model/default")).toBeLessThan(requests.indexOf("/api/integration"))
   })
 
-  test("lists OpenCode Go before Zen and preserves the remaining integration order", async () => {
+  test("hides OpenCode Zen and Go (Codev) and preserves the remaining integration order", async () => {
     using server = authServer((request, url) => {
       if (url.pathname === "/api/integration") {
         return Response.json(
@@ -102,7 +102,7 @@ describe("auth command", () => {
         .trim()
         .split("\n")
         .map((line) => line.split(/\s{2,}/)[0]),
-    ).toEqual(["OpenCode Go", "OpenCode Zen", "Anthropic"])
+    ).toEqual(["Anthropic"])
   })
 
   test("runs command authentication without interactive input", async () => {
@@ -144,14 +144,14 @@ describe("auth command", () => {
   test.each([
     { id: "openai", method: "browser", form: undefined, args: [], answer: undefined },
     {
-      id: "opencode",
+      id: "console",
       method: "device",
       form: consoleForm,
       args: [],
       answer: { server: "https://opencode.ai/console" },
     },
     {
-      id: "opencode",
+      id: "console",
       method: "device",
       form: consoleForm,
       args: ["--answer", "server=https://staging.example.com/console"],

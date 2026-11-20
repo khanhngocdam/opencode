@@ -5,9 +5,13 @@ import { ServerConnection } from "../../services/server-connection"
 import { Config } from "../../config"
 import { resolve } from "@opencode/tui/config"
 import { Global } from "@opencode/util/global"
+import { spawnStatsDaemon } from "@codev/upload/spawn"
+import { codevFlagEnabled } from "../../services/codev-flag"
 
 export default Runtime.handler(Commands.commands.mini, (input) =>
   Effect.gen(function* () {
+    // Codev: push session statistics in a detached child on every launch (one push, lock-guarded).
+    if (codevFlagEnabled("codev_upload")) spawnStatsDaemon()
     const { runMini, validateMiniTerminal } = yield* Effect.promise(() => import("../../mini"))
     yield* Effect.promise(async () => validateMiniTerminal())
     const server = yield* ServerConnection.resolve({

@@ -31,6 +31,14 @@ These v1 inventory rows are classified as covered by the Codev2 identity work
 - Visual brand: red codev wordmark/"C" in TUI, CLI, web, desktop and OAuth page; v1 app icons and favicons;
   Roboto/Roboto Mono only with Monotype names patched out (font directive). Typechecked and unit-tested; not yet
   checked visually in a built desktop app. The new-session interactive wordmark game is replaced by a static logo.
+- CLI/TUI v1 parity: startup gateway key check (silent re-mint, forced sign-in gate on a dead SSO session, configure
+  on a refused key), sign-in nudge, stats push spawned at TUI/`run`/`mini` launch, OpenCode Zen/Go hidden from
+  `auth login/list`, custom OpenAI-compatible provider in `/configure`, `codev2 codegraph enable|disable|status`,
+  `codev2` in user-facing command hints. Unit-tested; not yet exercised against the live gateway.
+- CLI updates (v1 parity): npm `codev2.0-code` dist-tag check, TUI notification and `/update`, `codev2 upgrade`;
+  silent same-minor install only under `autoupdate: true`. Not yet verified with a real npm release on Windows.
+- Not ported yet: a real v1 session import (`migrate-v1`
+  only stages a snapshot and stays dev-only), desktop gateway SSO/configure gate, and the desktop-only sandbox (Work).
 - Desktop app IDs, deep links, updater isolation
 - Service discovery / ports under Codev2 state
 - Fork governance files (`DIVERGENCES.md`, check scripts, CI)

@@ -71,7 +71,9 @@ import { DialogConfig } from "./component/dialog-config"
 import { DialogDebug } from "./component/dialog-debug"
 import { DialogPair } from "./component/dialog-pair"
 import { DialogHighlights } from "./component/dialog-highlights"
-import { DialogConfigure } from "./component/dialog-configure"
+import { DialogConfigure, replaceCredential } from "./component/dialog-configure"
+import { ensureGatewayKey, GATEWAY_PROVIDER, loadAuth } from "@codev/gateway"
+import { shouldNudgeSignIn } from "@codev/upload/nudge"
 import { shouldOpenConfigure, shouldOpenConfigureGate } from "./util/configure-gate"
 import { claim } from "./util/highlights"
 import { DialogThemeList } from "./component/dialog-theme-list"
@@ -749,12 +751,54 @@ function App() {
   // up: escaping any step bounces back here instead of into a chat that cannot send. A model from any source (the
   // Codev gateway, another integration, env keys, config) releases it; quitting still works. `CODEV_CONFIGURE_GATE=0`
   // turns it off (the TUI test preload sets it, since app fixtures have no models).
+  // An SSO session the IdP has rejected (see the key check below) forces the same gate until a sign-in writes a live
+  // session to the shared auth file.
+  const [sessionExpired, setSessionExpired] = createSignal(false)
   createEffect(() => {
     if (!plugins.ready() || client.connection.status() !== "connected") return
     if (process.env.CODEV_CONFIGURE_GATE === "0") return
     if (process.env.OPENCODE_DRIVE || process.env.OPENCODE_STORY || process.env.OPENCODE_ROUTE) return
-    if (!shouldOpenConfigureGate({ models: data.location.model.list()?.length, dialogs: dialog.stack.length })) return
-    dialog.replace(() => <DialogConfigure />)
+    if (sessionExpired() && dialog.stack.length === 0 && loadAuth()) return void setSessionExpired(false)
+    const models = data.location.model.list()?.length
+    if (!shouldOpenConfigureGate({ models, dialogs: dialog.stack.length, expired: sessionExpired() })) return
+    dialog.replace(() => <DialogConfigure expired={sessionExpired()} />)
+  })
+
+  // Codev: once per launch, check the stored gateway key (v1 parity). Gateway keys expire on their own and a dead one
+  // keeps its integration "connected" while every message 401s. A key the SSO session can re-mint is swapped in
+  // silently; a dead SSO session forces the gate above; a refused key offers the configure dialog. Network trouble is
+  // never acted on. Skipped for a remote --server, whose credentials live on another machine.
+  let keyChecked = false
+  createEffect(() => {
+    if (keyChecked || !plugins.ready() || client.connection.status() !== "connected") return
+    if (process.env.CODEV_CONFIGURE_GATE === "0" || !terminalEnvironment.localServer) return
+    keyChecked = true
+    void ensureGatewayKey()
+      .then(async (result) => {
+        if (result.status === "refreshed")
+          return replaceCredential(
+            { client, data },
+            { integrationID: GATEWAY_PROVIDER.id, label: "CoDev gateway", key: result.apiKey },
+          )
+        if (result.status !== "needs-login") return
+        if (result.reason === "expired") return setSessionExpired(true)
+        if (result.reason === "rejected" && dialog.stack.length === 0) dialog.replace(() => <DialogConfigure />)
+      })
+      .catch(toast.error)
+  })
+
+  // Codev: the background stats push records a dead SSO session; remind the user once per launch until they sign in.
+  let nudged = false
+  createEffect(() => {
+    if (nudged || !plugins.ready()) return
+    nudged = true
+    if (process.env.CODEV_CONFIGURE_GATE === "0" || !shouldNudgeSignIn()) return
+    toast.show({
+      variant: "warning",
+      title: "Usage reporting is paused",
+      message: "Your CoDev sign-in has expired. Run /configure (or `codev2 upload`) to sign in again.",
+      duration: 10000,
+    })
   })
 
   // Opens the release highlights once after an update, but only into an idle home screen during startup.
